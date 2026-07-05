@@ -1,1 +1,2 @@
-print("A", "B", "C", sep="-", end=" ->  ")
+print("A", "B", "C", sep="-", end=" -> ")
+print("Yakun")
