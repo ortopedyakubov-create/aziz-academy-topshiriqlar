@@ -1,0 +1,851 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maryam book - Premium Media Social Platform</title>
+    <style>
+        /* Asosiy o'zgaruvchilar - Ranglar rejimi uchun */
+        :root {
+            --bg-gradient: radial-gradient(circle at center, #0a192f, #020c1b);
+            --text-color: #fff;
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(0, 0, 0, 0.4);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --secondary-text: #8892b0;
+            --body-text: #ccd6f6;
+            --image-filter: none;
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: radial-gradient(circle at center, #f4f6f9, #e2e8f0);
+            --text-color: #1e293b;
+            --panel-bg: rgba(0, 0, 0, 0.03);
+            --panel-border: rgba(0, 0, 0, 0.1);
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(0, 0, 0, 0.04);
+            --secondary-text: #64748b;
+            --body-text: #334155;
+            --image-filter: none;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background-color: #00f2fe;
+            color: #020c1b;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 6px;
+            vertical-align: middle;
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+        }
+
+        /* Modallar */
+        .settings-modal, .name-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
+            display: none; justify-content: center; align-items: center; z-index: 1100;
+        }
+        .name-modal { background: rgba(2, 12, 27, 0.95); backdrop-filter: blur(15px); z-index: 1000; }
+
+        .settings-content, .modal-content {
+            background: var(--bg-gradient); border: 2px solid #00f2fe;
+            padding: 25px; border-radius: 15px; text-align: center; width: 90%; max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 242, 254, 0.2);
+        }
+
+        .modal-content h2 { margin-bottom: 15px; background: linear-gradient(45deg, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .modal-content input { width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; text-align: center; margin-bottom: 20px; outline: none; }
+        .modal-content button { padding: 10px 25px; background: linear-gradient(135deg, #00f2fe, #4facfe); border: none; border-radius: 8px; color: #020c1b; font-weight: bold; cursor: pointer; }
+
+        .theme-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .theme-btn { padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.5); background: var(--panel-bg); color: var(--text-color); cursor: pointer; font-weight: bold; }
+        .close-settings-btn { background: #ff4a4a; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+
+        /* Header */
+        header {
+            width: 100%; max-width: 700px; padding: 15px 20px;
+            background: var(--panel-bg); backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border); border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; box-shadow: 0 8px 32px 0 rgba(0, 238, 255, 0.05);
+        }
+        header h1 { font-size: 24px; font-weight: bold; background: linear-gradient(45deg, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-actions { display: flex; gap: 10px; align-items: center; }
+        .user-name-display { font-size: 14px; color: #00f2fe; border: 1px solid #00f2fe; padding: 5px 12px; border-radius: 20px; background: rgba(0, 242, 254, 0.05); cursor: pointer; display: flex; align-items: center; }
+        .settings-toggle-btn { background: var(--panel-bg); border: 1px solid var(--panel-border); color: var(--text-color); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+
+        /* 📸 YANGI: STORIES (STATUSLAR) PANEL */
+        .stories-outer-container {
+            width: 100%; max-width: 700px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 15px; padding: 12px; margin-bottom: 15px; overflow-x: auto; display: flex; gap: 15px; align-items: center;
+        }
+        .story-node { display: flex; flex-direction: column; align-items: center; min-width: 65px; cursor: pointer; text-align: center; }
+        .story-circle { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #00f2fe; padding: 2px; background: transparent; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0, 242, 254, 0.2); }
+        .story-circle img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .story-name { font-size: 11px; margin-top: 5px; color: var(--body-text); max-width: 65px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .add-story-btn { background: rgba(0, 242, 254, 0.1); border: 1px dashed #00f2fe; color: #00f2fe; font-size: 20px; font-weight: bold; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        /* Panellar */
+        .saved-creators-panel, .planner-panel, .music-player-panel, .display-filters-panel {
+            width: 100%; max-width: 700px; background: var(--panel-bg);
+            border: 1px solid var(--panel-border); padding: 15px; border-radius: 15px;
+            margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;
+        }
+        
+        /* 🌓 YANGI: EKRAN FILTRLARI PANELI */
+        .filter-buttons-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-chip { background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); padding: 6px 12px; border-radius: 8px; color: var(--text-color); cursor: pointer; font-size: 12px; }
+        .filter-chip.active { background: rgba(0,242,254,0.15); border-color: #00f2fe; color: #00f2fe; }
+
+        .saved-header-zone { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .saved-title { font-size: 12px; color: var(--secondary-text); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .add-creator-form { display: flex; gap: 6px; }
+        .add-creator-form input { padding: 5px 10px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 6px; color: var(--text-color); font-size: 12px; width: 140px; outline: none; }
+        .add-creator-form button { background: #00f2fe; border: none; color: #020c1b; padding: 5px 10px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .creators-list { display: flex; gap: 10px; flex-wrap: wrap; }
+        .creator-badge { background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.3); padding: 5px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .creator-badge span { color: #00f2fe; font-weight: 500; }
+        .remove-creator-btn, .delete-track-btn { background: none; border: none; color: #ff4a4a; cursor: pointer; }
+
+        /* Planner */
+        .planner-form { display: flex; gap: 8px; flex-wrap: wrap; }
+        .planner-form input[type="text"] { flex: 1; min-width: 150px; padding: 8px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-color); font-size: 13px; outline: none; }
+        .planner-form input[type="time"] { padding: 8px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 8px; color: #00f2fe; font-size: 13px; }
+        .planner-form button { background: linear-gradient(135deg, #00f2fe, #4facfe); border: none; color: #020c1b; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .planner-list { display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto; }
+        .planner-item { background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .planner-time { color: #00f2fe; font-weight: bold; margin-right: 10px; background: rgba(0,242,254,0.1); padding: 2px 6px; border-radius: 4px; }
+
+        /* Tepadagi Umumiy Musiqa pleyeri */
+        .player-controls { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+        .music-btn { background: rgba(0, 242, 254, 0.1); color: #00f2fe; border: 1px solid #00f2fe; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        audio { flex: 1; height: 35px; outline: none; }
+        .playlist-container { background: rgba(0, 0, 0, 0.1); border-radius: 8px; padding: 8px; max-height: 120px; overflow-y: auto; font-size: 13px; }
+        .track-item { padding: 6px 10px; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .track-item.active { background: rgba(0, 242, 254, 0.15); color: #00f2fe; font-weight: bold; }
+
+        /* Qidiruv */
+        .search-container { width: 100%; max-width: 700px; margin-bottom: 25px; }
+        .search-box { width: 100%; padding: 12px 20px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 12px; color: var(--text-color); font-size: 15px; outline: none; }
+
+        /* Post Yaratuvchi */
+        .post-creator { background: var(--panel-bg); border: 1px solid var(--panel-border); padding: 20px; border-radius: 15px; margin-bottom: 25px; width: 100%; max-width: 700px; }
+        .post-creator textarea { width: 100%; height: 90px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 12px; color: var(--text-color); font-size: 16px; resize: none; outline: none; }
+        .creator-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        .file-upload-btn { background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(0, 242, 254, 0.5); padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #00f2fe; flex: 1; text-align: center; min-width: 120px; }
+        .publish-btn { margin-top: 15px; width: 100%; padding: 12px; background: linear-gradient(135deg, #00f2fe, #4facfe); border: none; border-radius: 10px; color: #020c1b; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+        .media-preview-box { position: relative; margin-top: 10px; display: none; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.5); max-height: 200px; text-align: center; padding: 10px; }
+        .remove-media-btn { position: absolute; top: 5px; right: 5px; background: rgba(255, 0, 0, 0.8); border: none; color: white; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; z-index: 10; }
+
+        /* Lenta */
+        .feed-container { width: 100%; max-width: 700px; }
+        .posts-timeline { display: flex; flex-direction: column; gap: 20px; }
+        .post-card { position: relative; background: var(--card-bg); border: 1px solid var(--panel-border); padding: 20px; border-radius: 15px; }
+        
+        .post-header { display: flex; align-items: center; margin-bottom: 12px; padding-right: 150px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #020c1b; margin-right: 12px; background-size: cover; background-position: center; background-image: linear-gradient(45deg, #00f2fe, #4facfe); }
+        .ai-avatar { background-image: linear-gradient(45deg, #ff007f, #7f00ff) !important; color: #fff !important; }
+        .post-info h3 { font-size: 16px; display: flex; align-items: center; }
+        .post-info span { font-size: 12px; color: var(--secondary-text); }
+        .post-body { font-size: 15px; line-height: 1.6; color: var(--body-text); }
+
+        /* MEDIA BLOKLARI */
+        .post-media-container { margin-top: 12px; border-radius: 10px; overflow: hidden; background: #000; display: flex; flex-direction: column; align-items: center; max-height: 480px; position: relative;}
+        .post-uploaded-img { width: 100%; max-height: 380px; object-fit: contain; filter: var(--image-filter); transition: filter 0.3s ease; cursor: pointer; }
+        .post-uploaded-video { width: 100%; max-height: 380px; object-fit: contain; background: #000; filter: var(--image-filter); transition: filter 0.3s ease; }
+        
+        /* Multimedia Sifat Paneli */
+        .media-quality-container {
+            width: 100%; background: rgba(0,0,0,0.8); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; z-index: 5;
+        }
+        .quality-label { color: #8892b0; }
+        .quality-select { background: #0a192f; color: #00f2fe; border: 1px solid #00f2fe; padding: 2px 8px; border-radius: 4px; outline: none; cursor: pointer; font-size: 12px;}
+
+        /* POST ICHIDAGI MUSIQA PLEYERI */
+        .post-audio-container {
+            margin-top: 12px; background: rgba(0, 242, 254, 0.03); border: 1px solid rgba(0, 242, 254, 0.2); padding: 12px 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px;
+        }
+        .post-audio-info { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #00f2fe; font-weight: 500; }
+        .post-audio-player { width: 100%; height: 32px; outline: none; }
+
+        /* Hujjat yuklash bloki */
+        .post-file-container {
+            margin-top: 12px; background: rgba(0, 242, 254, 0.05); border: 1px dashed #00f2fe; padding: 12px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .file-info { display: flex; align-items: center; gap: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .file-name { font-size: 14px; color: #fff; text-overflow: ellipsis; overflow: hidden; }
+        .file-download-link { background: #00f2fe; color: #020c1b; font-weight: bold; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; }
+
+        /* 💬 YANGI: QUICK REACTIONS (TEZKOR REAKSIYALAR) */
+        .quick-reactions-bar { display: flex; gap: 8px; margin-top: 12px; background: rgba(0,0,0,0.1); width: fit-content; padding: 4px 10px; border-radius: 20px; }
+        .reaction-emoji-btn { background: none; border: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 3px; color: var(--secondary-text); }
+        .reaction-emoji-btn:hover { transform: scale(1.2); }
+
+        .post-actions { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--panel-border); display: flex; gap: 20px; }
+        .action-btn { background: none; border: none; color: var(--secondary-text); cursor: pointer; font-size: 14px; }
+        .ai-explain-btn { color: #ff007f !important; font-weight: bold; }
+
+        .comments-section { margin-top: 15px; background: rgba(0, 0, 0, 0.1); padding: 12px; border-radius: 10px; }
+        .comment-input-box { display: flex; gap: 8px; margin-bottom: 10px; }
+        .comment-input-box input { flex: 1; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 6px; color: var(--text-color); outline: none; }
+        .comment-input-box button { padding: 8px 15px; background: #00f2fe; border: none; border-radius: 6px; color: #020c1b; font-weight: bold; cursor: pointer; }
+        .comment-item { font-size: 13px; background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 6px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .lightbox-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
+        .lightbox-content { max-width: 90%; max-height: 75vh; border-radius: 10px; }
+        
+        .chatbot-toggle-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #ff007f, #7f00ff); border: none; color: white; font-size: 24px; cursor: pointer; z-index: 1000; }
+        .chatbot-window { position: fixed; bottom: 105px; right: 30px; width: 350px; height: 450px; background: var(--input-bg); backdrop-filter: blur(15px); border: 2px solid rgba(255, 0, 127, 0.3); border-radius: 20px; flex-direction: column; overflow: hidden; display: none; z-index: 999; }
+        .chatbot-window.active { display: flex; }
+        .chat-header { background: linear-gradient(135deg, #ff007f, #7f00ff); padding: 15px; display: flex; justify-content: space-between; color: white; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; font-size: 14px; }
+        .chat-bubble.bot { background: rgba(255, 255, 255, 0.08); align-self: flex-start; border-left: 3px solid #ff007f; color: var(--text-color); }
+        .chat-bubble.user { background: #7f00ff; color: #fff; align-self: flex-end; }
+        .chat-footer { padding: 10px; background: rgba(0, 0, 0, 0.1); display: flex; gap: 8px; }
+        .chat-footer input { flex: 1; padding: 10px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 10px; color: var(--text-color); outline: none; }
+        .chat-footer button { background: #ff007f; border: none; padding: 0 15px; border-radius: 10px; color: white; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- SETTINGS MODAL -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <h3>⚙️ Tizim Sozlamalari</h3>
+            <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 10px;">
+                <p style="font-size: 14px; margin-bottom: 8px;">Profil rasmi:</p>
+                <input type="file" id="userAvatarInput" accept="image/*" onchange="uploadUserAvatar(this)">
+            </div>
+            <div class="theme-options">
+                <button class="theme-btn" onclick="setTheme('dark')">🌙 Tungi Rejim</button>
+                <button class="theme-btn" onclick="setTheme('light')">☀️ Kunduzgi Rejim</button>
+            </div>
+            <button class="close-settings-btn" onclick="toggleSettings(false)">Yopish</button>
+        </div>
+    </div>
+
+    <!-- Ism kiritish -->
+    <div class="name-modal" id="nameModal" style="display: none;">
+        <div class="modal-content">
+            <h2>Maryam book</h2>
+            <input type="text" id="usernameInput" placeholder="Ismingiz...">
+            <button onclick="saveName()">Kirish</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1>Maryam book</h1>
+        <div class="nav-actions">
+            <div class="user-name-display" id="userNameDisplay" onclick="changeUser()">Foydalanuvchi <div class="verified-badge">✓</div></div>
+            <button class="settings-toggle-btn" onclick="toggleSettings(true)">⚙️ Sozlamalar</button>
+        </div>
+    </header>
+
+    <!-- 📸 STORIES (STATUSLAR) PANEL -->
+    <div class="stories-outer-container">
+        <div class="story-node" title="Status qo'shish">
+            <label class="add-story-btn" for="storyFileInput">+</label>
+            <input type="file" id="storyFileInput" accept="image/*" style="display:none;" onchange="createNewStory(this)">
+            <span class="story-name">Mening statusim</span>
+        </div>
+        <div id="storiesDynamicList" style="display:flex; gap:15px;"></div>
+    </div>
+
+    <!-- 🌓 EKRAN FILTRLARI PANELI -->
+    <div class="display-filters-panel">
+        <div class="saved-title">🌓 Ekran va Media Filtrlari:</div>
+        <div class="filter-buttons-grid">
+            <button class="filter-chip active" id="f-none" onclick="applyScreenFilter('none')">Standart</button>
+            <button class="filter-chip" id="f-night" onclick="applyScreenFilter('night')">🌙 Tungi yorug'lik (Sariq)</button>
+            <button class="filter-chip" id="f-contrast" onclick="applyScreenFilter('contrast')">👁️ Yuqori Kontrast</button>
+            <button class="filter-chip" id="f-retro" onclick="applyScreenFilter('retro')">📷 Retro (Oq-qora)</button>
+        </div>
+    </div>
+
+    <!-- Saqlanganlar -->
+    <div class="saved-creators-panel">
+        <div class="saved-header-zone">
+            <div class="saved-title">📌 Saqlangan Odamlar:</div>
+            <div class="add-creator-form">
+                <input type="text" id="manualCreatorInput" placeholder="Ism...">
+                <button onclick="addCreatorManually()">+</button>
+            </div>
+        </div>
+        <div class="creators-list" id="savedCreatorsList"></div>
+    </div>
+
+    <!-- Kun tartibi -->
+    <div class="planner-panel">
+        <div class="saved-title">📅 Kun tartibi:</div>
+        <div class="planner-form">
+            <input type="text" id="plannerTaskInput" placeholder="Reja...">
+            <input type="time" id="plannerTimeInput">
+            <button onclick="addPlannerTask()">Qo'shish</button>
+        </div>
+        <div class="planner-list" id="plannerList"></div>
+    </div>
+
+    <!-- Umumiy Musiqa pleeri -->
+    <div class="music-player-panel">
+        <div class="player-controls">
+            <label for="musicInput" class="music-btn">➕ Kutubxonaga (.mp3)</label>
+            <input type="file" id="musicInput" accept="audio/mp3" multiple onchange="addNewMusic(this)">
+            <audio id="mainAudioPlayer" controls ontimeupdate="saveTrackProgress()" onended="playNextTrack()"></audio>
+        </div>
+        <div class="playlist-container"><div id="playlistTracks"></div></div>
+    </div>
+
+    <!-- Qidirish -->
+    <div class="search-container">
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Ism bo'yicha qidirish..." oninput="filterPosts()">
+    </div>
+
+    <div class="feed-container">
+        <!-- Post Yaratish -->
+        <div class="post-creator">
+            <textarea id="postInput" placeholder="Bugun nima yangiliklar bor?"></textarea>
+            
+            <div class="media-preview-box" id="mediaPreviewBox">
+                <button class="remove-media-btn" onclick="clearSelectedMedia()">×</button>
+                <div id="previewContainer"></div>
+            </div>
+
+            <div class="creator-actions">
+                <label class="file-upload-btn" for="imageInput">📸 Rasm</label>
+                <input type="file" id="imageInput" accept="image/*" onchange="previewMedia(this, 'image')">
+
+                <label class="file-upload-btn" for="videoInput">🎥 Video</label>
+                <input type="file" id="videoInput" accept="video/mp4, video/webm" onchange="previewMedia(this, 'video')">
+
+                <label class="file-upload-btn" for="audioPostInput" style="border-color: #ff007f; color: #ff007f;">🎵 Musiqa</label>
+                <input type="file" id="audioPostInput" accept="audio/mp3, audio/mpeg" onchange="previewMedia(this, 'audioPost')">
+
+                <label class="file-upload-btn" for="fileAnyInput" style="border-color: #4facfe; color: #4facfe;">📁 Fayl</label>
+                <input type="file" id="fileAnyInput" onchange="previewMedia(this, 'file')">
+            </div>
+            <button class="publish-btn" onclick="addPost()">Nashr qilish</button>
+        </div>
+
+        <div class="posts-timeline" id="postsTimeline"></div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+        <div id="lightboxMediaWrapper" style="display:flex; flex-direction:column; align-items:center;"></div>
+    </div>
+
+    <!-- Chatbot -->
+    <button class="chatbot-toggle-btn" onclick="toggleChatbot()">🤖</button>
+    <div class="chatbot-window" id="chatbotWindow">
+        <div class="chat-header"><h3>🤖 Maryam AI</h3><button onclick="toggleChatbot()" style="background:none; border:none; color:white; font-size:20px;">×</button></div>
+        <div class="chat-messages" id="chatMessages"><div class="chat-bubble bot">Salom! Tarmoq multimedia tizimi va yangi Statuslar (Stories) to'liq yangilandi! 🚀</div></div>
+        <div class="chat-footer">
+            <input type="text" id="chatInput" placeholder="Xabar..." onkeypress="handleChatKey(event)">
+            <button onclick="sendChatMessage()">>></button>
+        </div>
+    </div>
+
+    <script>
+        let currentMediaData = { src: "", type: "", fileName: "" };
+        let currentUserName = "Foydalanuvchi";
+        let currentUserAvatar = "";
+        let aiSpeechEngine = window.speechSynthesis;
+        let playlist = [];
+        let currentTrackIndex = 0;
+        let db;
+
+        const request = indexedDB.open("MaryamPremiumDB", 5);
+        request.onupgradeneeded = function(e) {
+            db = e.target.result;
+            if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", { keyPath: "id", autoIncrement: true });
+            if(!db.objectStoreNames.contains("media")) db.createObjectStore("media", { keyPath: "postId" });
+            if(!db.objectStoreNames.contains("stories")) db.createObjectStore("stories", { keyPath: "id", autoIncrement: true });
+        };
+        request.onsuccess = function(e) {
+            db = e.target.result;
+            loadPlaylistFromDB();
+            loadPosts();
+            loadStories();
+        };
+
+        window.onload = function() {
+            checkUser();
+            applySavedTheme();
+            renderSavedCreators();
+            renderPlannerTasks();
+            startPlannerClock();
+        };
+
+        /* ================= 📅 PLANNER TIZIMI ================= */
+        function addPlannerTask() {
+            const taskInput = document.getElementById('plannerTaskInput');
+            const timeInput = document.getElementById('plannerTimeInput');
+            if (taskInput.value.trim() === "" || timeInput.value === "") return;
+
+            let tasks = JSON.parse(localStorage.getItem('maryam_planner_tasks')) || [];
+            tasks.push({ id: Date.now(), text: taskInput.value.trim(), time: timeInput.value, triggered: false });
+            localStorage.setItem('maryam_planner_tasks', JSON.stringify(tasks));
+            taskInput.value = ""; timeInput.value = "";
+            renderPlannerTasks();
+        }
+
+        function renderPlannerTasks() {
+            const container = document.getElementById('plannerList');
+            let tasks = JSON.parse(localStorage.getItem('maryam_planner_tasks')) || [];
+            container.innerHTML = tasks.length === 0 ? `<div style="color:var(--secondary-text);font-size:13px;">Hozircha reja yo'q...</div>` : "";
+            tasks.sort((a, b) => a.time.localeCompare(b.time));
+            tasks.forEach(task => {
+                const item = document.createElement('div');
+                item.className = 'planner-item';
+                item.innerHTML = `<div><span class="planner-time">⏰ ${task.time}</span><span>${task.text}</span></div>`;
+                container.appendChild(item);
+            });
+        }
+
+        function startPlannerClock() {
+            setInterval(() => {
+                const now = new Date();
+                const current = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+                let tasks = JSON.parse(localStorage.getItem('maryam_planner_tasks')) || [];
+                tasks.forEach(task => {
+                    if (task.time === current && !task.triggered) {
+                        task.triggered = true;
+                        localStorage.setItem('maryam_planner_tasks', JSON.stringify(tasks));
+                        alert(`⏰ Reja vaqti bo'ldi: ${task.text}`);
+                        renderPlannerTasks();
+                    }
+                });
+            }, 1000);
+        }
+
+        /* ================= ⚙️ SOZLAMALAR & FILTRLAR ================= */
+        function toggleSettings(show) { document.getElementById('settingsModal').style.display = show ? "flex" : "none"; }
+        function setTheme(name) { document.documentElement.setAttribute('data-theme', name); localStorage.setItem('maryam_theme', name); toggleSettings(false); }
+        function applySavedTheme() { document.documentElement.setAttribute('data-theme', localStorage.getItem('maryam_theme') || 'dark'); }
+        function uploadUserAvatar(input) {
+            if (input.files && input.files[0]) {
+                const r = new FileReader(); r.onload = function(e) { currentUserAvatar = e.target.result; localStorage.setItem('maryam_user_avatar', currentUserAvatar); loadPosts(); }; r.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 🌓 YANGI: JONLI EKRAN FILTR EFFEKTLARI
+        function applyScreenFilter(filterName) {
+            document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`f-${filterName}`).classList.add('active');
+
+            let cssFilterValue = "none";
+            if (filterName === 'night') cssFilterValue = "sepia(0.5) saturate(1.2) contrast(0.95)";
+            else if (filterName === 'contrast') cssFilterValue = "contrast(1.4) brightness(1.05)";
+            else if (filterName === 'retro') cssFilterValue = "grayscale(1) contrast(1.1)";
+
+            document.documentElement.style.setProperty('--image-filter', cssFilterValue);
+        }
+
+        /* ================= 📸 YANGI: STORIES (STATUSLAR) FUNKSIYALARI ================= */
+        function createNewStory(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const storyObj = { author: currentUserName, src: e.target.result, timestamp: Date.now() };
+                    const tx = db.transaction(["stories"], "readwrite");
+                    tx.objectStore("stories").add(storyObj);
+                    tx.oncomplete = function() { loadStories(); };
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function loadStories() {
+            if(!db) return;
+            db.transaction(["stories"], "readonly").objectStore("stories").getAll().onsuccess = function(e) {
+                const list = e.target.result;
+                const container = document.getElementById('storiesDynamicList');
+                container.innerHTML = "";
+                
+                // 24 soatdan o'tgan statuslarni tozalash (86400000 ms)
+                const now = Date.now();
+                list.forEach(story => {
+                    if (now - story.timestamp < 86400000) {
+                        const node = document.createElement('div');
+                        node.className = 'story-node';
+                        node.onclick = function() { openStoryLightbox(story.src, story.author); };
+                        node.innerHTML = `
+                            <div class="story-circle"><img src="${story.src}"></div>
+                            <span class="story-name">${story.author}</span>
+                        `;
+                        container.appendChild(node);
+                    } else {
+                        db.transaction(["stories"], "readwrite").objectStore("stories").delete(story.id);
+                    }
+                });
+            };
+        }
+
+        function openStoryLightbox(src, author) {
+            const wrapper = document.getElementById('lightboxMediaWrapper');
+            wrapper.innerHTML = `
+                <div style="color:#00f2fe; margin-bottom:10px; font-weight:bold;">🔥 ${author} tarixidan:</div>
+                <img id="story-lightbox-img" src="${src}" class="lightbox-content" style="filter: var(--image-filter);">
+                <div class="media-quality-container" style="max-width:500px; margin-top:10px; border-radius:8px;" onclick="event.stopPropagation()">
+                    <span class="quality-label">📸 Status Sifati:</span>
+                    <select class="quality-select" onchange="changeStoryQuality(this)">
+                        <option value="auto">Avto</option>
+                        <option value="1080p">1080p (Full HD)</option>
+                        <option value="480p">480p</option>
+                        <option value="144p">144p</option>
+                    </select>
+                </div>
+            `;
+            document.getElementById('lightboxModal').style.display = "flex";
+        }
+
+        function changeStoryQuality(select) {
+            const img = document.getElementById('story-lightbox-img');
+            if(!img) return;
+            if(select.value === '1080p') img.style.filter = "blur(0px) contrast(1.05)";
+            else if(select.value === '480p') img.style.filter = "blur(1.5px)";
+            else if(select.value === '144p') img.style.filter = "blur(4px) pixelate";
+            else img.style.filter = "none";
+        }
+
+        /* ================= 🎵 KUTUBXONA MUSIQA PLEERI ================= */
+        function addNewMusic(input) {
+            if (input.files) {
+                for (let i = 0; i < input.files.length; i++) {
+                    const r = new FileReader(); r.onload = function(e) {
+                        db.transaction(["songs"], "readwrite").objectStore("songs").add({ name: input.files[i].name.replace(".mp3", ""), src: e.target.result });
+                        setTimeout(loadPlaylistFromDB, 200);
+                    }; r.readAsDataURL(input.files[i]);
+                }
+            }
+        }
+        function loadPlaylistFromDB() {
+            if (!db) return;
+            db.transaction(["songs"], "readonly").objectStore("songs").getAll().onsuccess = function(e) {
+                playlist = e.target.result; renderPlaylist();
+                const saved = localStorage.getItem('maryam_active_index');
+                if (saved && playlist[saved]) { currentTrackIndex = parseInt(saved); selectTrack(currentTrackIndex, false); }
+                else if (playlist.length > 0) selectTrack(0, false);
+            };
+        }
+        function renderPlaylist() {
+            const container = document.getElementById('playlistTracks');
+            container.innerHTML = playlist.length === 0 ? `<div style="color:var(--secondary-text);padding:5px;">Musiqa yo'q...</div>` : "";
+            playlist.forEach((track, index) => {
+                const item = document.createElement('div'); item.className = `track-item ${index === currentTrackIndex ? 'active' : ''}`;
+                item.innerHTML = `<span onclick="selectTrack(${index}, true)">🎵 ${track.name}</span>`;
+                container.appendChild(item);
+            });
+        }
+        function selectTrack(index, play) {
+            if (playlist.length === 0 || !playlist[index]) return;
+            currentTrackIndex = index;
+            const player = document.getElementById('mainAudioPlayer');
+            player.src = playlist[currentTrackIndex].src;
+            localStorage.setItem('maryam_active_index', currentTrackIndex);
+            renderPlaylist(); if (play) player.play();
+        }
+        function playNextTrack() {
+            if (playlist.length === 0) return;
+            let next = currentTrackIndex + 1; if (next >= playlist.length) next = 0;
+            selectTrack(next, true);
+        }
+        function saveTrackProgress() { const p = document.getElementById('mainAudioPlayer'); if(p) localStorage.setItem('maryam_track_time', p.currentTime); }
+
+        /* ================= MULTIMEDIA PREVIEW ================= */
+        function previewMedia(input, type) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentMediaData.src = e.target.result;
+                    currentMediaData.type = type;
+                    currentMediaData.fileName = file.name;
+                    
+                    const container = document.getElementById('previewContainer');
+                    if (type === 'image') container.innerHTML = `<img src="${e.target.result}" style="max-height:150px; border-radius:8px;">`;
+                    else if (type === 'video') container.innerHTML = `<video src="${e.target.result}" muted autoplay loop style="max-height:150px;"></video>`;
+                    else if (type === 'audioPost') container.innerHTML = `<div style="padding:10px; color:#ff007f;">🎵 Post qilinadigan musiqa: <br><b>${file.name}</b></div>`;
+                    else if (type === 'file') container.innerHTML = `<div style="padding:10px; color:#00f2fe;">📄 Fayl: <b>${file.name}</b></div>`;
+                    
+                    document.getElementById('mediaPreviewBox').style.display = "block";
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearSelectedMedia() {
+            document.getElementById('imageInput').value = "";
+            document.getElementById('videoInput').value = "";
+            document.getElementById('audioPostInput').value = "";
+            document.getElementById('fileAnyInput').value = "";
+            document.getElementById('mediaPreviewBox').style.display = "none";
+            currentMediaData = { src: "", type: "", fileName: "" };
+        }
+
+        /* ================= SIFATNI BOSHQARISH FUNKSIYALARI ================= */
+        function changeMediaQuality(selectElement, id, mediaType) {
+            const quality = selectElement.value;
+            const element = document.getElementById(`${mediaType}-element-${id}`);
+            if (!element) return;
+
+            if (quality === '1080p') {
+                element.style.filter = "blur(0px) contrast(1.05)";
+            } else if (quality === '480p') {
+                element.style.filter = "blur(1.2px)";
+            } else if (quality === '144p') {
+                element.style.filter = "blur(4.5px) pixelate";
+            } else {
+                element.style.filter = "none";
+            }
+        }
+
+        /* ================= POST TIZIMI ================= */
+        function addPost() {
+            const postInput = document.getElementById('postInput');
+            if (postInput.value.trim() === "" && currentMediaData.src === "") return;
+
+            const now = new Date();
+            const timeStr = "Bugun, " + now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+            const postId = Date.now();
+
+            const postObj = {
+                id: postId, author: currentUserName, initial: currentUserName.charAt(0).toUpperCase(),
+                text: postInput.value.trim(), hasMedia: currentMediaData.src !== "", mediaType: currentMediaData.type,
+                fileName: currentMediaData.fileName, time: timeStr, likes: 0, comments: [], userAvatar: currentUserAvatar,
+                reactions: { thumbs: 0, fire: 0, laugh: 0, heart: 0, sad: 0 } // YANGI
+            };
+
+            if (currentMediaData.src !== "") {
+                db.transaction(["media"], "readwrite").objectStore("media").put({ postId: postId, src: currentMediaData.src });
+            }
+
+            let posts = JSON.parse(localStorage.getItem('maryam_book_posts')) || [];
+            posts.push(postObj);
+            localStorage.setItem('maryam_book_posts', JSON.stringify(posts));
+
+            postInput.value = "";
+            clearSelectedMedia();
+            loadPosts();
+        }
+
+        function loadPosts(filtered = null) {
+            if(!db) return;
+            const timeline = document.getElementById('postsTimeline'); timeline.innerHTML = "";
+            let posts = filtered || JSON.parse(localStorage.getItem('maryam_book_posts')) || [];
+            
+            if(posts.length === 0 && !filtered) {
+                renderPostCard({ id: 1, author: "Maryam AI", initial: "M", text: "Xush kelibsiz! Tarmoqda musiqa, rasm va videolarni sifat bilan ulashing.", hasMedia: false, time: "Tizim", isAI: true, likes: 0, comments: [], reactions: { thumbs: 0, fire: 0, laugh: 0, heart: 0, sad: 0 } });
+            } else {
+                for (let i = posts.length - 1; i >= 0; i--) { renderPostCard(posts[i]); }
+            }
+        }
+
+        // 💬 YANGI: TEZKOR REAKSIYA BOSILGANDA OSHIRISH TIZIMI
+        function triggerQuickReaction(postId, type) {
+            let posts = JSON.parse(localStorage.getItem('maryam_book_posts')) || [];
+            let idx = posts.findIndex(p => p.id === postId);
+            if (idx !== -1) {
+                if(!posts[idx].reactions) posts[idx].reactions = { thumbs:0, fire:0, laugh:0, heart:0, sad:0 };
+                posts[idx].reactions[type] = (posts[idx].reactions[type] || 0) + 1;
+                localStorage.setItem('maryam_book_posts', JSON.stringify(posts));
+                loadPosts();
+            }
+        }
+
+        function renderPostCard(post) {
+            const timeline = document.getElementById('postsTimeline');
+            const card = document.createElement('div');
+            card.className = 'post-card';
+            card.id = `post-${post.id}`;
+
+            let mediaHTML = "";
+            if (post.hasMedia) {
+                if (post.mediaType === 'image') {
+                    mediaHTML = `
+                        <div class="post-media-container">
+                            <img id="image-element-${post.id}" class="post-uploaded-img" onclick="openLightbox(this.src, 'image')">
+                            <div class="media-quality-container">
+                                <span class="quality-label"> Rasm Sifati:</span>
+                                <select class="quality-select" onchange="changeMediaQuality(this, ${post.id}, 'image')">
+                                    <option value="auto">Avto</option>
+                                    <option value="1080p">1080p (Full HD)</option>
+                                    <option value="480p">480p</option>
+                                    <option value="144p">144p</option>
+                                </select>
+                            </div>
+                        </div>`;
+                } else if (post.mediaType === 'video') {
+                    mediaHTML = `
+                        <div class="post-media-container">
+                            <video id="video-element-${post.id}" class="post-uploaded-video" controls muted></video>
+                            <div class="media-quality-container">
+                                <span class="quality-label"> Video Sifati:</span>
+                                <select class="quality-select" onchange="changeMediaQuality(this, ${post.id}, 'video')">
+                                    <option value="auto">Avto</option>
+                                    <option value="1080p">1080p (Full HD)</option>
+                                    <option value="480p">480p</option>
+                                    <option value="144p">144p</option>
+                                </select>
+                            </div>
+                        </div>`;
+                } else if (post.mediaType === 'audioPost') {
+                    mediaHTML = `
+                        <div class="post-audio-container">
+                            <div class="post-audio-info">
+                                <span>🎵 Audio Trek:</span>
+                                <span style="color:#fff;" title="${post.fileName}">${post.fileName || 'Musiqa.mp3'}</span>
+                            </div>
+                            <audio id="audio-element-${post.id}" class="post-audio-player" controls></audio>
+                        </div>`;
+                } else if (post.mediaType === 'file') {
+                    mediaHTML = `
+                        <div class="post-file-container">
+                            <div class="file-info"><span class="file-name">${post.fileName || 'Hujjat.fayl'}</span></div>
+                            <a id="file-download-${post.id}" class="file-download-link" download="${post.fileName || 'fayl'}">Yuklab olish</a>
+                        </div>`;
+                }
+            }
+
+            if (post.hasMedia) {
+                setTimeout(() => {
+                    db.transaction(["media"], "readonly").objectStore("media").get(post.id).onsuccess = function(e) {
+                        const res = e.target.result;
+                        if(res) {
+                            const element = document.getElementById(`${post.mediaType}-element-${post.id}`);
+                            if(element) element.src = res.src;
+                            if(post.mediaType === 'file') {
+                                const fDown = document.getElementById(`file-download-${post.id}`);
+                                if(fDown) fDown.href = res.src;
+                            }
+                        }
+                    };
+                }, 50);
+            }
+
+            let actionsBtn = post.author === currentUserName && !post.isAI ? `<button class="delete-post-btn" style="position:absolute; top:15px; right:15px; background:none; border:none; cursor:pointer;" onclick="deletePost(${post.id})">❌</button>` : "";
+            let comms = "";
+            if(post.comments) { post.comments.forEach(c => { comms += `<div class="comment-item"><b>${c.user}:</b> ${c.text}</div>`; }); }
+            let avatarStyle = post.author === currentUserName && currentUserAvatar ? `style="background-image:url('${currentUserAvatar}');color:transparent;"` : (post.userAvatar ? `style="background-image:url('${post.userAvatar}');color:transparent;"` : "");
+
+            // Reaksiyalar hisoblagichini tayyorlash
+            let rObj = post.reactions || { thumbs:0, fire:0, laugh:0, heart:0, sad:0 };
+
+            card.innerHTML = `
+                ${actionsBtn}
+                <div class="post-header">
+                    <div class="${post.isAI ? 'avatar ai-avatar' : 'avatar'}" ${avatarStyle}>${avatarStyle ? '' : post.initial}</div>
+                    <div class="post-info"><h3>${post.author} ${(post.author===currentUserName||post.isAI)?'<div class="verified-badge">✓</div>':''}</h3><span>${post.time}</span></div>
+                </div>
+                <div class="post-body" id="post-body-text-${post.id}">${post.text.replace(/\n/g, '<br>')}</div>
+                ${mediaHTML}
+                
+                <!-- 💬 YANGI: Tezkor reaksiyalar paneli -->
+                <div class="quick-reactions-bar">
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'thumbs')">👍 <span>${rObj.thumbs||0}</span></button>
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'thumbs')">😍 <span>${rObj.thumbs||0}</span></button>
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'fire')">🔥 <span>${rObj.fire||0}</span></button>
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'laugh')">😂 <span>${rObj.laugh||0}</span></button>
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'heart')">❤️ <span>${rObj.heart||0}</span></button>
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'sad')">😢 <span>${rObj.sad||0}</span></button>
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'thumbs')">👎🏻 <span>${rObj.thumbs||0}</span></button>
+                    <button class="reaction-emoji-btn" onclick="triggerQuickReaction(${post.id}, 'thumbs')">💩 <span>${rObj.thumbs||0}</span></button>
+                </div>
+
+                <div class="post-actions">
+                    <button class="action-btn" onclick="likePost(${post.id})">❤️ Like (${post.likes || 0})</button>
+                    <button class="action-btn" onclick="dez likePost(${post.id})">👎🏻 Dez Like (${post.likes || 0})</button>
+                    <button class="action-btn" onclick="document.getElementById('comment-input-${post.id}').focus()">💬 Komment</button>
+                    <button class="action-btn ai-explain-btn" onclick="aiExplainPost(${post.id})">🔊 Ovozli</button>
+                </div>
+                <div class="comments-section">
+                    <div class="comment-input-box"><input type="text" id="comment-input-${post.id}" placeholder="Fikr bildiring..."><button onclick="addComment(${post.id})">>></button></div>
+                    <div class="comments-list">${comms}</div>
+                </div>
+            `;
+            timeline.appendChild(card);
+        }
+
+        function deletePost(id) {
+            let posts = JSON.parse(localStorage.getItem('maryam_book_posts')) || [];
+            localStorage.setItem('maryam_book_posts', JSON.stringify(posts.filter(p => p.id !== id)));
+            db.transaction(["media"], "readwrite").objectStore("media").delete(id); loadPosts();
+        }
+        function likePost(id) {
+            let posts = JSON.parse(localStorage.getItem('maryam_book_posts')) || [];
+            let idx = posts.findIndex(p => p.id === id);
+            if (idx !== -1) { posts[idx].likes = (posts[idx].likes || 0) + 1; localStorage.setItem('maryam_book_posts', JSON.stringify(posts)); loadPosts(); }
+        }
+        function addComment(id) {
+            const inp = document.getElementById(`comment-input-${id}`); if (inp.value.trim() === "") return;
+            let posts = JSON.parse(localStorage.getItem('maryam_book_posts')) || [];
+            let idx = posts.findIndex(p => p.id === id);
+            if (idx !== -1) { if(!posts[idx].comments) posts[idx].comments = []; posts[idx].comments.push({ user: currentUserName, text: inp.value.trim() }); localStorage.setItem('maryam_book_posts', JSON.stringify(posts)); loadPosts(); }
+            inp.value = "";
+        }
+
+        /* ================= ESKI SAQLANGANLAR FUNKSIYALARI ================= */
+        function renderSavedCreators() {
+            const container = document.getElementById('savedCreatorsList');
+            let creators = JSON.parse(localStorage.getItem('maryam_saved_creators')) || ["Abdug'ani", "Maryam AI"];
+            container.innerHTML = "";
+            creators.forEach(name => {
+                const badge = document.createElement('div'); badge.className = 'creator-badge';
+                badge.innerHTML = `<span onclick="document.getElementById('searchBar').value='${name}'; filterPosts();">👤 ${name}</span><button class="remove-creator-btn" onclick="removeCreator('${name}')">×</button>`;
+                container.appendChild(badge);
+            });
+        }
+        function addCreatorManually() {
+            const inp = document.getElementById('manualCreatorInput'); if(inp.value.trim()==="")return;
+            let creators = JSON.parse(localStorage.getItem('maryam_saved_creators')) || ["Abdug'ani", "Maryam AI"];
+            if(!creators.includes(inp.value.trim())) { creators.push(inp.value.trim()); localStorage.setItem('maryam_saved_creators', JSON.stringify(creators)); renderSavedCreators(); }
+            inp.value = "";
+        }
+        function removeCreator(name) {
+            let creators = JSON.parse(localStorage.getItem('maryam_saved_creators')) || ["Abdug'ani", "Maryam AI"];
+            localStorage.setItem('maryam_saved_creators', JSON.stringify(creators.filter(c => c !== name))); renderSavedCreators();
+        }
+
+        /* ================= QO'SHIMCHA TIZIM SCRIPT KODLARI ================= */
+        function checkUser() { const saved = localStorage.getItem('maryam_book_user'); if (!saved) document.getElementById('nameModal').style.display = 'flex'; else { currentUserName = saved; document.getElementById('userNameDisplay').innerHTML = `${currentUserName} <div class="verified-badge">✓</div>`; } }
+        function saveName() { const inp = document.getElementById('usernameInput').value.trim(); if(inp==="")return; localStorage.setItem('maryam_book_user', inp); currentUserName = inp; checkUser(); document.getElementById('nameModal').style.display='none'; loadPosts(); }
+        function changeUser() { document.getElementById('nameModal').style.display = 'flex'; }
+        function filterPosts() { const q = document.getElementById('searchBar').value.trim().toLowerCase(); let posts = JSON.parse(localStorage.getItem('maryam_book_posts')) || []; if (q === "") { loadPosts(); return; } loadPosts(posts.filter(p => p.author.toLowerCase().includes(q))); }
+        function openLightbox(src, type) { const w = document.getElementById('lightboxMediaWrapper'); w.innerHTML = `<img src="${src}" class="lightbox-content" style="filter: var(--image-filter);">`; document.getElementById('lightboxModal').style.display = "flex"; }
+        function closeLightbox() { document.getElementById('lightboxModal').style.display = "none"; }
+        function aiExplainPost(id) { if(aiSpeechEngine.speaking){aiSpeechEngine.cancel(); return;} const t = document.getElementById(`post-body-text-${id}`); if(t){ const u = new SpeechSynthesisUtterance(t.innerText); u.lang='uz-UZ'; aiSpeechEngine.speak(u); } }
+        function toggleChatbot() { document.getElementById('chatbotWindow').classList.toggle('active'); }
+        function handleChatKey(e) { if (e.key === "Enter") sendChatMessage(); }
+        function sendChatMessage() { const inp = document.getElementById('chatInput'); if(inp.value.trim()==="")return; appendChatBubble(inp.value.trim(), 'user'); inp.value=""; setTimeout(() => { appendChatBubble("Statuslar paneli, tezkor reaksiyalar va jonli ekran filtrlari ishga tushirildi! 🌓🔥", 'bot'); }, 600); }
+        function appendChatBubble(text, sender) { const m = document.getElementById('chatMessages'); const b = document.createElement('div'); b.className = `chat-bubble ${sender}`; b.innerText = text; m.appendChild(b); m.scrollTop = m.scrollHeight; }
+    </script>
+</body>
+</html>

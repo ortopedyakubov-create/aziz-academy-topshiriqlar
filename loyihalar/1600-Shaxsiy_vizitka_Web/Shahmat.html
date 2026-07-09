@@ -1,0 +1,359 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Chiroqchi Shaxmati: Final O'yin</title>
+    <style>
+        body { 
+            background-color: #111; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            color: #f1c40f; 
+            font-family: 'Georgia', serif; 
+            margin: 0;
+            padding-top: 20px;
+        }
+        h1 { text-shadow: 2px 2px #c0392b; margin-bottom: 5px; }
+        .subtitle { color: #eee; font-style: italic; margin-bottom: 20px; }
+        #chessboard { 
+            display: grid; 
+            grid-template-columns: repeat(8, 65px); 
+            grid-template-rows: repeat(8, 65px); 
+            border: 8px solid #c0392b; 
+            box-shadow: 0 0 25px #f1c40f;
+            outline: 3px solid #f1c40f;
+        }
+        .cell { 
+            width: 65px; height: 65px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 42px; cursor: pointer; user-select: none;
+        }
+        .white-cell { background-color: #fff; }
+        .blue-cell { background-color: #a9cce3; } 
+        
+        .selected { background-color: #e67e22 !important; } 
+        .hint-cell { background-color: #2ecc71 !important; } 
+        
+        #status { 
+            margin-top: 15px; font-size: 22px; font-weight: bold; 
+            background: #c0392b; color: white; padding: 10px 20px; 
+            border-radius: 5px; border: 2px solid #f1c40f;
+            text-align: center;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 12px 25px; font-size: 18px; font-weight: bold;
+            color: white; border: 2px solid #f1c40f;
+            border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: 0.2s;
+        }
+        .btn-yordam { background-color: #27ae60; }
+        .btn-yordam:hover { background-color: #219653; transform: scale(1.05); }
+        .btn-restart { background-color: #c0392b; display: none; }
+        .btn-restart:hover { background-color: #a93226; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+    <h1>Chiroqchi Polvonlari Shaxmati</h1>
+    <div class="subtitle">Shohi yeb qo'yilgan polvon yutqazadi!</div>
+    
+    <div id="chessboard"></div>
+    
+    <p id="status">Yuring polvon, navbat sizniki!</p>
+    
+    <div class="btn-container">
+        <button id="btnHelp" class="btn btn-yordam" onclick="askForAIHelp()">Chiroqchidan Yordam So'rash 💡</button>
+        <button id="btnRestart" class="btn btn-restart" onclick="restartGame()">Qaytadan Boshlash 🔄</button>
+    </div>
+
+    <script>
+        const boardEl = document.getElementById('chessboard');
+        const statusText = document.getElementById('status');
+        const btnRestart = document.getElementById('btnRestart');
+        const btnHelp = document.getElementById('btnHelp');
+        
+        let board;
+        let selected;
+        let turn; 
+        let currentHint; 
+        let isGameOver;
+
+        const pieces = { 
+            'r':'♜', 'n':'♞', 'b':'♝', 'q':'♛', 'k':'♚', 'p':'♟', 
+            'R':'♜', 'N':'♞', 'B':'♝', 'Q':'♛', 'K':'♚', 'P':'♟' 
+        };
+
+        const pieceValues = {
+            'p': 10, 'r': 50, 'n': 30, 'b': 30, 'q': 90, 'k': 900,
+            'P': 10, 'R': 50, 'N': 30, 'B': 30, 'Q': 90, 'K': 900
+        };
+
+        function initGame() {
+            board = [
+                ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+                ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+                ['', '', '', '', '', '', '', ''],
+                ['', '', '', '', '', '', '', ''],
+                ['', '', '', '', '', '', '', ''],
+                ['', '', '', '', '', '', '', ''],
+                ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+                ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+            ];
+            selected = null;
+            turn = 'white';
+            currentHint = null;
+            isGameOver = false;
+            statusText.innerText = "Yuring polvon, navbat sizniki!";
+            btnRestart.style.display = "none";
+            btnHelp.style.disabled = false;
+            render();
+        }
+
+        function isValidMove(piece, r1, c1, r2, c2, currentBoard = board) {
+            if (r1 === r2 && c1 === c2) return false;
+            if (r2 < 0 || r2 > 7 || c2 < 0 || c2 > 7) return false;
+            
+            const p = piece.toLowerCase();
+            const dr = Math.abs(r2 - r1);
+            const dc = Math.abs(c2 - c1);
+
+            if (currentBoard[r2][c2] !== '') {
+                const isP1White = piece === piece.toUpperCase();
+                const isP2White = currentBoard[r2][c2] === currentBoard[r2][c2].toUpperCase();
+                if (isP1White === isP2White) return false;
+            }
+
+            if (p === 'p') {
+                const dir = (piece === 'P') ? -1 : 1;
+                if (c1 === c2) { 
+                    if (r2 === r1 + dir && currentBoard[r2][c2] === '') return true;
+                    if (r2 === r1 + 2 * dir && r1 === (piece === 'P' ? 6 : 1) && currentBoard[r2][c2] === '' && currentBoard[r1+dir][c1] === '') return true;
+                } else if (dr === 1 && dc === 1 && r2 === r1 + dir && currentBoard[r2][c2] !== '') return true; 
+                return false;
+            }
+
+            if (p === 'n') return (dr === 2 && dc === 1) || (dr === 1 && dc === 2);
+            if (p === 'b') return dr === dc && isPathClear(r1, c1, r2, c2, currentBoard);
+            if (p === 'r') return (r1 === r2 || c1 === c2) && isPathClear(r1, c1, r2, c2, currentBoard);
+            if (p === 'q') return (dr === dc || r1 === r2 || c1 === c2) && isPathClear(r1, c1, r2, c2, currentBoard);
+            if (p === 'k') return dr <= 1 && dc <= 1;
+
+            return false;
+        }
+
+        function isPathClear(r1, c1, r2, c2, currentBoard) {
+            let dr = Math.sign(r2 - r1);
+            let dc = Math.sign(c2 - c1);
+            let r = r1 + dr, c = c1 + dc;
+            while (r !== r2 || c !== c2) {
+                if (currentBoard[r][c] !== '') return false;
+                r += dr; c += dc;
+            }
+            return true;
+        }
+
+        function render() {
+            boardEl.innerHTML = '';
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${(r+c)%2===0 ? 'white-cell' : 'blue-cell'}`;
+                    
+                    if(selected && selected.r === r && selected.c === c) cell.classList.add('selected');
+                    if(currentHint && ((currentHint.r1 === r && currentHint.c1 === c) || (currentHint.r2 === r && currentHint.c2 === c))) {
+                        cell.classList.add('hint-cell');
+                    }
+                    
+                    const piece = board[r][c];
+                    cell.innerHTML = pieces[piece] || '';
+                    
+                    if (piece !== '') {
+                        cell.style.color = piece === piece.toUpperCase() ? '#ffffff' : '#1b4f72';
+                        cell.style.textShadow = '0 0 4px #000';
+                    }
+
+                    cell.onclick = () => handleCellClick(r, c);
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function checkGameEnd(targetPiece) {
+            if (targetPiece === 'K') { // Sizning shohingiz o'ldi
+                statusText.innerHTML = "O'YIN TUGADI!<br>AI g'olib bo'ldi. Chiroqchilik polvon yiqildi!";
+                isGameOver = true;
+                btnRestart.style.display = "block";
+                return true;
+            }
+            if (targetPiece === 'k') { // AIning shohi o'ldi
+                statusText.innerHTML = "O'YIN TUGADI!<br>Siz g'olib bo'ldingiz! Barakalla polvon!";
+                isGameOver = true;
+                btnRestart.style.display = "block";
+                return true;
+            }
+            return false;
+        }
+
+        function handleCellClick(r, c) {
+            if (turn !== 'white' || isGameOver) return; 
+            currentHint = null;
+
+            if (!selected) {
+                if (board[r][c] !== '' && board[r][c] === board[r][c].toUpperCase()) {
+                    selected = {r, c};
+                }
+            } else {
+                if (isValidMove(board[selected.r][selected.c], selected.r, selected.c, r, c)) {
+                    let targetPiece = board[r][c];
+                    
+                    // Yurishni amalga oshirish
+                    board[r][c] = board[selected.r][selected.c];
+                    board[selected.r][selected.c] = '';
+                    selected = null;
+                    render();
+                    
+                    // Shoh o'ldimi yo'qmi tekshirish
+                    if (checkGameEnd(targetPiece)) return;
+                    
+                    turn = 'black';
+                    statusText.innerText = "Katta polvon o'ylayapti...";
+                    setTimeout(makeSmartAIMove, 600); 
+                } else {
+                    selected = null;
+                }
+            }
+            render();
+        }
+
+        function evaluateBoard(currentBoard) {
+            let score = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (currentBoard[r][c] !== '') {
+                        let val = pieceValues[currentBoard[r][c]];
+                        if (currentBoard[r][c] === currentBoard[r][c].toLowerCase()) {
+                            score += val;
+                        } else {
+                            score -= val;
+                        }
+                    }
+                }
+            }
+            return score;
+        }
+
+        function makeSmartAIMove() {
+            if (isGameOver) return;
+            let bestMove = null;
+            let bestScore = -Infinity;
+            let availableMoves = [];
+
+            for (let r1 = 0; r1 < 8; r1++) {
+                for (let c1 = 0; c1 < 8; c1++) {
+                    if (board[r1][c1] !== '' && board[r1][c1] === board[r1][c1].toLowerCase()) {
+                        for (let r2 = 0; r2 < 8; r2++) {
+                            for (let c2 = 0; c2 < 8; c2++) {
+                                if (isValidMove(board[r1][c1], r1, c1, r2, c2, board)) {
+                                    availableMoves.push({r1, c1, r2, c2, piece: board[r1][c1]});
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (let move of availableMoves) {
+                let originalTarget = board[move.r2][move.c2];
+                board[move.r2][move.c2] = move.piece;
+                board[move.r1][move.c1] = '';
+
+                let score = evaluateBoard(board);
+
+                board[move.r1][move.c1] = move.piece;
+                board[move.r2][move.c2] = originalTarget;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+
+            if (bestMove) {
+                let targetPiece = board[bestMove.r2][bestMove.c2];
+                board[bestMove.r2][bestMove.c2] = board[bestMove.r1][bestMove.c1];
+                board[bestMove.r1][bestMove.c1] = '';
+                render();
+                if (checkGameEnd(targetPiece)) return;
+            } else if (availableMoves.length > 0) {
+                let randomMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+                let targetPiece = board[randomMove.r2][randomMove.c2];
+                board[randomMove.r2][randomMove.c2] = board[randomMove.r1][randomMove.c1];
+                board[randomMove.r1][randomMove.c1] = '';
+                render();
+                if (checkGameEnd(targetPiece)) return;
+            }
+
+            turn = 'white';
+            statusText.innerText = "Sizning navbatingiz polvon!";
+            render();
+        }
+
+        function askForAIHelp() {
+            if (turn !== 'white' || isGameOver) return;
+            let bestMove = null;
+            let worstScore = Infinity; 
+            let playerMoves = [];
+
+            for (let r1 = 0; r1 < 8; r1++) {
+                for (let c1 = 0; c1 < 8; c1++) {
+                    if (board[r1][c1] !== '' && board[r1][c1] === board[r1][c1].toUpperCase()) {
+                        for (let r2 = 0; r2 < 8; r2++) {
+                            for (let c2 = 0; c2 < 8; c2++) {
+                                if (isValidMove(board[r1][c1], r1, c1, r2, c2, board)) {
+                                    playerMoves.push({r1, c1, r2, c2, piece: board[r1][c1]});
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (let move of playerMoves) {
+                let originalTarget = board[move.r2][move.c2];
+                board[move.r2][move.c2] = move.piece;
+                board[move.r1][move.c1] = '';
+
+                let score = evaluateBoard(board);
+
+                board[move.r1][move.c1] = move.piece;
+                board[move.r2][move.c2] = originalTarget;
+
+                if (score < worstScore) {
+                    worstScore = score;
+                    bestMove = move;
+                }
+            }
+
+            if (bestMove) {
+                currentHint = bestMove;
+                statusText.innerText = "Yordam: Yashil chiroq yongan donani suring!";
+                render();
+            }
+        }
+
+        function restartGame() {
+            initGame();
+        }
+
+        // O'yinni ilk bor yoqish
+        initGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,869 @@
+
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karavan Market - Karavan AI Hub Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
+        
+        /* Haqiqiy sichqonchani yashirish va custom kursor sozlamalari */
+        @media (pointer: fine) {
+            body, button, input, [onclick], a, .star-btn, .like-btn, .dislike-btn { 
+                cursor: none !important; 
+            }
+        }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .ai-gradient {
+            background: linear-gradient(135deg, #00f0ff 0%, #7000ff 100%);
+        }
+        .ai-glow:hover {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.45);
+        }
+        .glass-panel {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Ovoz va yozish to'lqini animatsiyasi */
+        .voice-wave {
+            animation: wave 1.2s infinite ease-in-out;
+        }
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1.5); }
+        }
+
+        /* Pulsatsiya effekti (Yozish indikatori uchun) */
+        .typing-pulse {
+            animation: pulse-glow 1.5s infinite ease-in-out;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* SHAFFOF CYBER KURSOR EFFEKTI */
+        .cyber-point {
+            width: 6px;
+            height: 6px;
+            background-color: #00f0ff;
+            border-radius: 50%;
+            position: fixed;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10000;
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+        .cyber-follower {
+            width: 36px;
+            height: 36px;
+            border: 2px solid rgba(0, 240, 255, 0.5);
+            background: rgba(0, 240, 255, 0.08);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 50%;
+            position: fixed;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), width 0.2s, height 0.2s, border-color 0.2s, background-color 0.2s;
+        }
+    </style>
+</head>
+<body class="pb-32 bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
+
+    <!-- SHAFFOF CYBER KURSOR ELEMENTLARI -->
+    <div id="cyber-point" class="cyber-point hidden md:block"></div>
+    <div id="cyber-follower" class="cyber-follower hidden md:block"></div>
+
+    <!-- Top Bar -->
+    <div class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 py-2 px-4 text-xs flex justify-between items-center border-b border-slate-200 dark:border-slate-800 transition-colors">
+        <div class="flex gap-6">
+            <span class="flex items-center gap-1.5 cursor-pointer hover:text-cyan-500 transition" onclick="alert('Toshkent bo\'ylab yetkazib berish 24 soat ichida!')">📍 Toshkent</span>
+            <span class="font-medium text-purple-600 dark:text-cyan-400 cursor-pointer hover:underline flex items-center gap-1" onclick="toggleAIChat()">🤖 Karavan AI Ovozli Yordamchi</span>
+        </div>
+        <div class="hidden sm:flex items-center gap-2 font-medium">
+            <span class="inline-block w-2 h-2 rounded-full bg-cyan-500 animate-ping"></span>
+            AI Ovozli tahlil, Dynamic reyting va Cyber Kursor faol!
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-40 glass-panel bg-white/80 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800/80 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center gap-6">
+            <!-- Logo -->
+            <div class="flex flex-col cursor-pointer" onclick="window.location.reload()">
+                <h1 class="text-3xl font-extrabold tracking-tighter uppercase text-slate-900 dark:text-white flex items-center gap-1">
+                    karavan<span class="text-transparent bg-clip-text ai-gradient font-black">market</span>
+                </h1>
+                <span class="text-[9px] text-purple-600 dark:text-cyan-400 font-bold tracking-widest uppercase -mt-1 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full ai-gradient animate-pulse"></span> Karavan AI Hub Pro V4
+                </span>
+            </div>
+            
+            <!-- Catalog Button -->
+            <button onclick="toggleCatalogDropdown()" class="hidden lg:flex items-center gap-2 ai-gradient text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-cyan-500/20 hover:opacity-90 transition active:scale-95 cursor-none">
+                <span>📂</span> Katalog
+            </button>
+
+            <!-- AI Smart Search Bar with Voice Feature -->
+            <div class="flex-1 relative group flex items-center gap-2">
+                <div class="relative flex-1">
+                    <input id="search-input" type="text" oninput="handleSearch()" placeholder="Matn yozing yoki mikrofonga gapiring..." 
+                        class="w-full bg-slate-100 dark:bg-slate-800/80 border-2 border-slate-200 dark:border-slate-700 focus:border-cyan-400 focus:bg-white dark:focus:bg-slate-900 rounded-xl py-3 px-11 pr-24 outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 cursor-none">
+                    <span class="absolute left-4 top-3.5 text-gray-400 text-lg">🔍</span>
+                    
+                    <!-- Voice Search Button -->
+                    <button onclick="startVoiceRecognition('search-input')" class="absolute right-3 top-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-500 p-1.5 rounded-lg border border-cyan-500/30 transition active:scale-90 cursor-none" title="Ovozli qidiruv (Galasavoy)">
+                        🎙️
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Actions -->
+            <div class="flex items-center gap-6 font-semibold text-slate-600 dark:text-slate-300">
+                <div onclick="toggleTheme()" class="flex flex-col items-center cursor-pointer hover:text-cyan-500 transition group" title="Oq / Qora rejim">
+                    <span id="theme-icon" class="text-xl group-hover:rotate-12 transition duration-200">🌙</span>
+                    <span id="theme-text" class="text-[10px] font-bold">Qora</span>
+                </div>
+
+                <div onclick="openProfileModal()" class="flex flex-col items-center cursor-pointer hover:text-cyan-500 transition group">
+                    <span class="text-xl group-hover:-translate-y-0.5 transition">👤</span>
+                    <span class="text-xs font-medium">Kabinet</span>
+                </div>
+                
+                <div onclick="toggleCartDrawer()" class="flex flex-col items-center cursor-pointer hover:text-cyan-500 transition relative group">
+                    <span class="text-xl group-hover:-translate-y-0.5 transition">🛒</span>
+                    <span id="cart-badge-desktop" class="absolute -top-1 -right-2 bg-cyan-500 text-slate-950 text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-white dark:border-slate-900">0</span>
+                    <span class="text-xs font-medium">Savatcha</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Catalog Dropdown -->
+    <div id="catalog-dropdown" class="hidden max-w-7xl mx-auto px-4 relative">
+        <div class="absolute top-2 left-4 z-50 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 grid grid-cols-1 gap-2">
+            <button onclick="filterCategory('all')" class="text-left w-full px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition text-sm cursor-none">🌐 Hamma Mahsulotlar</button>
+            <button onclick="filterCategory('Elektronika')" class="text-left w-full px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition text-sm cursor-none">📱 Elektronika</button>
+            <button onclick="filterCategory('Maishiy texnika')" class="text-left w-full px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition text-sm cursor-none">📺 Maishiy Texnika</button>
+            <button onclick="filterCategory('Kiyimlar')" class="text-left w-full px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition text-sm cursor-none">👟 Kiyim va Poyabzal</button>
+            <button onclick="filterCategory('Go'zallik')" class="text-left w-full px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition text-sm cursor-none">💨 Go'zallik</button>
+            <button onclick="filterCategory('Uy-ro'zg'or')" class="text-left w-full px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition text-sm cursor-none">🏡 Uy-ro'zg'or</button>
+        </div>
+    </div>
+
+    <!-- Categories Tab -->
+    <div class="bg-white dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto no-scrollbar whitespace-nowrap transition-colors">
+        <div id="category-tabs" class="max-w-7xl mx-auto flex gap-8 text-sm text-slate-500 dark:text-slate-400 font-semibold">
+            <button onclick="filterCategory('chegirma')" class="hover:text-cyan-500 flex items-center gap-1 text-red-500 font-bold animate-pulse cursor-none">🔥 Hafta Chegirmalari</button>
+            <button onclick="filterCategory('all')" class="hover:text-cyan-500 transition font-bold text-purple-600 dark:text-cyan-400 cursor-none">🤖 AI Tanlovi</button>
+            <button onclick="filterCategory('Elektronika')" class="hover:text-slate-800 dark:hover:text-white transition cursor-none">Elektronika</button>
+            <button onclick="filterCategory('Maishiy texnika')" class="hover:text-slate-800 dark:hover:text-white transition cursor-none">Maishiy texnika</button>
+            <button onclick="filterCategory('Kiyimlar')" class="hover:text-slate-800 dark:hover:text-white transition cursor-none">Kiyimlar</button>
+            <button onclick="filterCategory('Go\'zallik')" class="hover:text-slate-800 dark:hover:text-white transition cursor-none">Go'zallik</button>
+            <button onclick="filterCategory('Uy-ro\'zg\'or')" class="hover:text-slate-800 dark:hover:text-white transition cursor-none">Uy-ro'zg'or</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto p-4 mt-6">
+        
+        <!-- Big AI Banner -->
+        <div class="bg-gradient-to-br from-slate-100 via-slate-200 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 rounded-[2.5rem] p-8 md:p-12 mb-12 text-slate-900 dark:text-white flex flex-col lg:flex-row justify-between items-center relative overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800/80 transition-all">
+            <div class="absolute -left-20 -top-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
+            <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl"></div>
+            
+            <div class="relative z-10 lg:w-3/5 text-center lg:text-left">
+                <div class="bg-gradient-to-r from-purple-600 to-blue-600 dark:from-cyan-500 dark:to-blue-600 text-white dark:text-slate-950 text-[10px] font-black px-3 py-1 rounded-full inline-flex items-center gap-1 mb-4 uppercase tracking-wider shadow-md">
+                    <span>📢</span> YANGILIK: AI endi ovozli gapiradi!
+                </div>
+                <h2 class="text-4xl md:text-6xl font-black mb-4 tracking-tight leading-none">
+                    Kelajak Gadjetlari <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 dark:from-cyan-400 dark:via-teal-300 dark:to-purple-400">Ovozli AI Hub!</span>
+                </h2>
+                <p class="text-slate-600 dark:text-slate-400 mb-8 text-base md:text-lg max-w-xl font-light">
+                    AI chat oynasiga yozing yoki mikrofondan gapiring, u sizga javob qaytaradi va o'z ovozi bilan o'qib beradi!
+                </p>
+                <button onclick="scrollToProducts()" class="ai-gradient text-white px-8 py-4 rounded-xl font-extrabold text-base shadow-lg hover:scale-105 transition-all duration-300 active:scale-95 cursor-none">
+                    Aqlli xaridni boshlash 🚀
+                </button>
+            </div>
+            
+            <div class="text-[12rem] md:text-[16rem] mt-8 lg:mt-0 opacity-10 lg:opacity-30 select-none animate-bounce duration-1000">🤖</div>
+        </div>
+
+        <!-- Dynamic Product Grid -->
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+    </main>
+
+    <!-- Ovoz Yozish Paneli -->
+    <div id="voice-loader-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
+        <div class="bg-slate-900 border-2 border-cyan-500/40 rounded-3xl p-8 max-w-xs w-full text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-24 h-24 bg-cyan-500/20 rounded-full blur-xl"></div>
+            <h4 class="text-cyan-400 font-extrabold text-lg mb-2 tracking-wide">Karavan AI Eshitmoqda...</h4>
+            <p class="text-slate-400 text-xs mb-6">Gapiring, tizim ovozni matnga o'giryapti</p>
+            
+            <div class="flex items-center justify-center gap-1.5 h-12 mb-6">
+                <span class="w-1.5 h-6 bg-cyan-400 rounded-full voice-wave" style="animation-delay: 0.1s"></span>
+                <span class="w-1.5 h-6 bg-purple-500 rounded-full voice-wave" style="animation-delay: 0.3s"></span>
+                <span class="w-1.5 h-6 bg-cyan-400 rounded-full voice-wave" style="animation-delay: 0.5s"></span>
+                <span class="w-1.5 h-6 bg-purple-500 rounded-full voice-wave" style="animation-delay: 0.2s"></span>
+                <span class="w-1.5 h-6 bg-cyan-400 rounded-full voice-wave" style="animation-delay: 0.4s"></span>
+            </div>
+            <button onclick="closeVoiceModal()" class="w-full bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-bold border border-slate-700 cursor-none">To'xtatish</button>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 glass-panel bg-white/90 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 py-3 px-6 flex justify-between items-center z-40 shadow-2xl md:hidden">
+        <div onclick="window.location.reload()" class="flex flex-col items-center gap-0.5 text-cyan-500 dark:text-cyan-400 font-bold">
+            <span class="text-xl">🏠</span>
+            <span class="text-[10px]">Asosiy</span>
+        </div>
+        <div onclick="toggleCatalogDropdown()" class="flex flex-col items-center gap-0.5 text-slate-400">
+            <span class="text-xl">📂</span>
+            <span class="text-[10px]">Katalog</span>
+        </div>
+        <div onclick="toggleCartDrawer()" class="flex flex-col items-center relative">
+            <span class="text-xl">🛒</span>
+            <span id="cart-badge-mobile" class="absolute -top-1 -right-2 bg-cyan-500 text-slate-950 text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">0</span>
+            <span class="text-[10px]">Savatcha</span>
+        </div>
+        <div onclick="openProfileModal()" class="flex flex-col items-center gap-0.5 text-slate-400">
+            <span class="text-xl">👤</span>
+            <span class="text-[10px]">Profil</span>
+        </div>
+    </nav>
+
+    <!-- Side Cart Drawer -->
+    <div id="cart-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-white dark:bg-slate-900 z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col border-l border-slate-200 dark:border-slate-800">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
+            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">🛒 Savatchangiz</h3>
+            <button onclick="toggleCartDrawer()" class="text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold cursor-none">&times;</button>
+        </div>
+        
+        <div id="cart-items-container" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/30 text-sm no-scrollbar"></div>
+        
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 space-y-4">
+            <div class="flex justify-between items-center font-bold text-slate-900 dark:text-white">
+                <span>Jami summa:</span>
+                <span id="cart-total-price" class="text-cyan-500 dark:text-cyan-400 text-xl font-black">0 so'm</span>
+            </div>
+            <button onclick="checkoutOrder()" class="w-full ai-gradient text-white py-3.5 rounded-xl font-extrabold shadow-lg transition active:scale-95 cursor-none">
+                Buyurtmani rasmiylashtirish 🚀
+            </button>
+        </div>
+    </div>
+    <div id="cart-overlay" onclick="toggleCartDrawer()" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"></div>
+
+    <!-- Product Detail Modal -->
+    <div id="product-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
+                <span id="modal-badge" class="text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase">Tafsilotlar</span>
+                <button onclick="closeProductModal()" class="text-slate-400 text-2xl font-bold cursor-none">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row gap-6 items-center">
+                    <div id="modal-icon" class="text-7xl p-8 bg-slate-100 dark:bg-slate-950 rounded-2xl border min-w-[150px] aspect-square flex items-center justify-center"></div>
+                    <div class="flex-1 space-y-2 text-center sm:text-left">
+                        <h4 id="modal-title" class="text-2xl font-extrabold text-slate-900 dark:text-white"></h4>
+                        <div id="modal-rating" class="text-amber-500 text-sm"></div>
+                        <div id="modal-installment" class="bg-cyan-100 dark:bg-cyan-950/50 text-cyan-800 dark:text-cyan-400 text-xs font-bold px-3 py-1.5 rounded-xl inline-block"></div>
+                        <div class="pt-4">
+                            <span class="text-xs text-slate-400 line-through block" id="modal-old-price"></span>
+                            <span class="text-3xl font-black text-slate-900 dark:text-white" id="modal-price"></span>
+                        </div>
+                    </div>
+                </div>
+                <hr class="border-slate-200 dark:border-slate-800">
+                <div class="bg-gradient-to-r from-slate-100 to-indigo-50 dark:from-slate-950 dark:to-indigo-950 p-4 rounded-2xl border border-purple-500/20">
+                    <h5 class="font-bold text-sm text-purple-700 dark:text-cyan-400 mb-1">🧠 Karavan AI Xulosasi:</h5>
+                    <p id="modal-ai-desc" class="text-xs text-slate-700 dark:text-slate-300 italic"></p>
+                </div>
+                <div class="space-y-2">
+                    <h5 class="font-bold text-sm text-slate-900 dark:text-white">Xarakteristikalari:</h5>
+                    <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                        <table class="w-full text-xs text-left">
+                            <tbody id="modal-specs-table" class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-900 dark:text-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex gap-3">
+                <button onclick="closeProductModal()" class="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-bold cursor-none">Yopish</button>
+                <div id="modal-action-btn-container" class="flex-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-3xl p-6 text-center shadow-2xl">
+            <div class="text-5xl mb-4" id="custom-modal-icon">👤</div>
+            <h4 class="text-xl font-black mb-2 text-slate-900 dark:text-white" id="custom-modal-title"></h4>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6" id="custom-modal-desc"></p>
+            <button onclick="closeCustomModal()" class="w-full ai-gradient text-white py-3 rounded-xl font-extrabold text-sm shadow-md cursor-none">Tushunarli 👍</button>
+        </div>
+    </div>
+
+    <!-- FLOATING AI ASSISTANT WIDGET -->
+    <div class="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+        <div id="ai-chat-window" class="hidden w-80 md:w-96 h-[460px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col mb-4 overflow-hidden transition-all duration-300">
+            <div class="ai-gradient p-4 text-slate-950 dark:text-white flex justify-between items-center shadow-md">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">Ai</span>
+                    <div>
+                        <h4 class="font-bold text-sm text-white tracking-wide">Karavan AI Hub Pro</h4>
+                        <span class="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">● Ovozli Tizim Faol</span>
+                    </div>
+                </div>
+                <button onclick="toggleAIChat()" class="text-white text-lg font-bold cursor-none">&times;</button>
+            </div>
+            
+            <!-- Xabarlar oynasi -->
+            <div id="ai-messages-box" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 dark:bg-slate-950 text-xs no-scrollbar font-normal tracking-wide">
+                <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 flex flex-col gap-2">
+                    <div class="leading-relaxed">Salom! 🧠 Men **Karavan AI Pro** intellektual tizimiman. Qidirayotgan gadjetingiz, NASA kosmik stansiyasi yoki sevimli avtomobillaringiz (BMW, Bugatti) haqida yozing. Men barcha savollaringizga ovozli javob qaytaraman!</div>
+                    <div class="flex items-center gap-3 pt-1 border-t border-slate-100 dark:border-slate-800/60 text-[11px] text-slate-400 select-none">
+                        <button onclick="toggleAiFeedback(this, 'like')" class="like-btn font-bold hover:text-cyan-400 transition active:scale-90 cursor-none">👍 Foydali</button>
+                        <button onclick="toggleAiFeedback(this, 'dislike')" class="dislike-btn font-bold hover:text-red-500 transition active:scale-90 cursor-none">👎 Yoqmadi</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ODAM YOZAYOTGANDA CHIQADIGAN NEON PANEL INDICATOR -->
+            <div id="user-typing-indicator" class="hidden px-4 py-1.5 bg-slate-100 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800/60 flex items-center gap-2 text-[11px] text-cyan-500 font-bold tracking-wide typing-pulse">
+                <span>✍️ Siz yozmoqdasiz</span>
+                <span class="flex gap-0.5 items-center">
+                    <span class="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                    <span class="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                    <span class="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
+                </span>
+            </div>
+
+            <!-- Input Panel -->
+            <div class="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2 items-center">
+                <input id="ai-user-input" type="text" oninput="handleUserTyping()" onkeypress="handleAiKeyPress(event)" placeholder="Matn kiriting (Ovozli javob beradi)..." class="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-xs rounded-xl px-3 py-2.5 outline-none border border-slate-300 dark:border-slate-700 cursor-none">
+                
+                <button onclick="startVoiceRecognition('ai-user-input')" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-500 p-2 rounded-xl border border-cyan-500/30 transition active:scale-90 cursor-none" title="Ovozli yozish">
+                    🎙️
+                </button>
+                
+                <button onclick="sendAiMessage()" class="ai-gradient text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md cursor-none">Yuborish</button>
+            </div>
+        </div>
+        <button onclick="toggleAIChat()" class="ai-gradient ai-glow text-white p-4 rounded-full shadow-xl flex items-center justify-center gap-2 transition-all duration-300 font-bold cursor-none">
+            <span class="text-2xl text-white">Ai</span>
+            <span class="text-sm text-white pr-1 hidden md:inline">AI yodamchi</span>
+        </button>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const productsDatabase = [
+            { id: 1, name: "iPhone 15 Pro, 128GB, Titan", price: 12000000, oldPrice: 14117000, icon: "📱", category: "Elektronika", badge: "✨ AI Tavsiya", badgeColor: "bg-purple-600", rating: 4, reviews: 452, installment: "1 250 000 so'm/oy", aiDesc: "Titan korpusli mukammal smartfon.", specs: { "Ekran": "6.1 Super Retina XDR", "Processor": "A17 Pro" } },
+            { id: 2, name: "MacBook Air M2 13\" 256GB, Gray", price: 15000000, oldPrice: 17647000, icon: "💻", category: "Elektronika", badge: "📉 Eng past narx", badgeColor: "bg-emerald-600", rating: 5, reviews: 120, installment: "1 650 000 so'm/oy", aiDesc: "Dasturlash va tezkor hisoblashlar uchun ideal chip.", specs: { "Ekran": "13.6 Liquid Retina", "Chipset": "Apple M2" } },
+            { id: 5, name: "Smart TV Samsung Neo QLED 55\"", price: 9500000, oldPrice: 11000000, icon: "📺", category: "Maishiy texnika", badge: "📺 Maishiy Texnika", badgeColor: "bg-indigo-600", rating: 5, reviews: 45, installment: "990 000 so'm/oy", aiDesc: "Sun'iy intellektga ega 4K grafik protsessor.", specs: { "Diagonal": "55 dyuym", "Ruxsat": "4K Ultra HD" } },
+            { id: 6, name: "Dyson Airwrap Multi-Styler", price: 7200000, oldPrice: 8500000, icon: "💨", category: "Go'zallik", badge: "✨ Premium", badgeColor: "bg-pink-600", rating: 5, reviews: 210, installment: "780 000 so'm/oy", aiDesc: "Havo oqimi aerodinamikasi (Koanda effekti) asosida ishlaydi.", specs: { "Quvvati": "1300 W", "Nasadkalar": "6 xil" } },
+            { id: 7, name: "Xiaomi Smart Air Purifier 4", price: 1900000, oldPrice: 2400000, icon: "🍃", category: "Uy-ro'zg'or", badge: "🏡 Uy-ro'zg'or", badgeColor: "bg-teal-600", rating: 4, reviews: 143, installment: "195 000 so'm/oy", aiDesc: "Smart havo filtrlash stansiyasi.", specs: { "Filtrlash": "3 bosqichli HEPA" } },
+            { id: 9, name: "BMW M Performance HUD Smart Display", price: 3500000, oldPrice: 4500000, icon: "🏎️", category: "Elektronika", badge: "⚡ BMW Maxsus", badgeColor: "bg-cyan-600", rating: 5, reviews: 98, installment: "290 000 so'm/oy", aiDesc: "Neon-blue uslubidagi avtomobil gologrammasi.", specs: { "Ulanish": "OBD2 / Bluetooth", "Displey": "Neon LED" } }
+        ];
+
+        let cart = [];
+        let recognition;
+        let typingTimeout;
+
+        // CYBER KURSOR MANTIQI
+        const pt = document.getElementById('cyber-point');
+        const fl = document.getElementById('cyber-follower');
+
+        document.addEventListener('mousemove', (e) => {
+            pt.style.left = e.clientX + 'px';
+            pt.style.top = e.clientY + 'px';
+            fl.style.left = e.clientX + 'px';
+            fl.style.top = e.clientY + 'px';
+        });
+
+        function initCursorHoverEffects() {
+            const targets = document.querySelectorAll('button, input, [onclick], a, .cursor-pointer, .star-btn, .like-btn, .dislike-btn');
+            targets.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    pt.style.backgroundColor = '#7000ff';
+                    fl.style.width = '50px';
+                    fl.style.height = '50px';
+                    fl.style.borderColor = 'rgba(112, 0, 255, 0.8)';
+                    fl.style.backgroundColor = 'rgba(112, 0, 255, 0.15)';
+                });
+                el.addEventListener('mouseleave', () => {
+                    pt.style.backgroundColor = '#00f0ff';
+                    fl.style.width = '36px';
+                    fl.style.height = '36px';
+                    fl.style.borderColor = 'rgba(0, 240, 255, 0.5)';
+                    fl.style.backgroundColor = 'rgba(0, 240, 255, 0.08)';
+                });
+            });
+        }
+
+        // ODAM YOZAYOTGANDA YOZISH PANELIDA KORINADIGAN MATN LOGIKASI
+        function handleUserTyping() {
+            const indicator = document.getElementById('user-typing-indicator');
+            const inputVal = document.getElementById('ai-user-input').value;
+
+            if (inputVal.trim() !== "") {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+
+            // Odam yozishdan to'xtaganini aniqlash (1.5 sekund harakatsiz tursa o'chadi)
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                indicator.classList.add('hidden');
+            }, 1500);
+        }
+
+        // OQ VA QORA REJIM
+        function toggleTheme() {
+            const htmlEl = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            if (htmlEl.classList.contains('dark')) {
+                htmlEl.classList.remove('dark');
+                themeIcon.innerText = "☀️";
+                themeText.innerText = "Light";
+            } else {
+                htmlEl.classList.add('dark');
+                themeIcon.innerText = "🌙";
+                themeText.innerText = "Dark";
+            }
+        }
+
+        // YULDUZCHA GENERATORI
+        function generateStarsHTML(productId, currentRating, isModal = false) {
+            let starsHTML = '<div class="flex items-center gap-1 select-none">';
+            for (let i = 1; i <= 5; i++) {
+                const isFilled = i <= currentRating;
+                const starColor = isFilled ? 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]' : 'text-slate-300 dark:text-slate-700';
+                const clickAction = isModal 
+                    ? `onclick="event.stopPropagation(); changeProductRating(${productId}, ${i}, true)"`
+                    : `onclick="event.stopPropagation(); changeProductRating(${productId}, ${i}, false)"`;
+                
+                starsHTML += `<span ${clickAction} class="star-btn text-xl transition-all duration-150 hover:scale-135 hover:text-amber-300 ${starColor}">★</span>`;
+            }
+            return starsHTML + '</div>';
+        }
+
+        function changeProductRating(id, newRating, isModalView = false) {
+            const product = productsDatabase.find(p => p.id === id);
+            if (product) {
+                product.rating = newRating;
+                product.reviews += 1;
+                renderProducts();
+                if (isModalView) {
+                    document.getElementById('modal-rating').innerHTML = `
+                        <div class="flex flex-wrap items-center gap-2">
+                            ${generateStarsHTML(product.id, product.rating, true)}
+                            <span class="text-xs text-slate-400">(${product.reviews} sharh)</span>
+                        </div>`;
+                }
+            }
+        }
+
+        // RENDERING PRODUCTS
+        function renderProducts(filterData = productsDatabase) {
+            const grid = document.getElementById('products-grid');
+            if (filterData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">Hech qanday mahsulot topilmadi 🔍</div>`;
+                return;
+            }
+            let content = '';
+            filterData.forEach(p => {
+                content += `
+                    <div onclick="openProductModal(${p.id})" class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-cyan-500/50 ai-glow transition-all duration-300 flex flex-col group relative cursor-none">
+                        <span class="absolute top-3 left-3 z-10 ${p.badgeColor} text-white text-[9px] font-black px-2 py-1 rounded-md shadow-md uppercase">
+                            ${p.badge}
+                        </span>
+                        <div class="relative rounded-xl overflow-hidden mb-4 bg-slate-100 dark:bg-slate-950 aspect-square flex items-center justify-center text-7xl group-hover:scale-105 transition-transform duration-300">
+                            ${p.icon}
+                        </div>
+                        <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-1 group-hover:text-cyan-500 transition">${p.name}</h4>
+                        
+                        <div class="flex items-center gap-2 mb-3">
+                            ${generateStarsHTML(p.id, p.rating, false)}
+                            <span class="text-[11px] text-slate-400 font-medium">(${p.reviews})</span>
+                        </div>
+
+                        <div class="mt-auto pt-2 border-t border-slate-200 dark:border-slate-800">
+                            <div class="flex justify-between items-center">
+                                <p class="text-xl font-black text-slate-900 dark:text-white">${formatPrice(p.price, false)} <span class="text-xs font-semibold text-slate-400">so'm</span></p>
+                                <button onclick="event.stopPropagation(); addToCart(${p.id}, '${p.name}', ${p.price}, '${p.icon}')" class="ai-gradient p-3 rounded-xl text-slate-950 font-bold cursor-none">🛒</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            grid.innerHTML = content;
+            setTimeout(initCursorHoverEffects, 50);
+        }
+
+        function filterCategory(category) {
+            document.getElementById('catalog-dropdown').classList.add('hidden');
+            if (category === 'all') {
+                renderProducts(productsDatabase);
+            } else if (category === 'chegirma') {
+                renderProducts(productsDatabase.filter(p => p.oldPrice > p.price));
+            } else {
+                renderProducts(productsDatabase.filter(p => p.category === category));
+            }
+        }
+
+        function handleSearch() {
+            const val = document.getElementById('search-input').value.toLowerCase();
+            renderProducts(productsDatabase.filter(p => p.name.toLowerCase().includes(val)));
+        }
+
+        function toggleCatalogDropdown() {
+            document.getElementById('catalog-dropdown').classList.toggle('hidden');
+        }
+
+        function scrollToProducts() {
+            document.getElementById('products-grid').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // GALASAVOY TIZIMI
+        function startVoiceRecognition(targetInputId) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Ovozli tizim qo'llab-quvvatlanmaydi.");
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'uz-UZ';
+            document.getElementById('voice-loader-modal').classList.remove('hidden');
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const speechToText = event.results[0][0].transcript;
+                document.getElementById(targetInputId).value = speechToText;
+                document.getElementById('voice-loader-modal').classList.add('hidden');
+                
+                if (targetInputId === 'search-input') handleSearch();
+                if (targetInputId === 'ai-user-input') {
+                    handleUserTyping();
+                    sendAiMessage();
+                }
+            };
+
+            recognition.onerror = () => document.getElementById('voice-loader-modal').classList.add('hidden');
+            recognition.onend = () => document.getElementById('voice-loader-modal').classList.add('hidden');
+        }
+
+        function closeVoiceModal() {
+            if (recognition) recognition.stop();
+            document.getElementById('voice-loader-modal').classList.add('hidden');
+        }
+
+        // MODALS
+        function openProductModal(id) {
+            const product = productsDatabase.find(p => p.id === id);
+            if (!product) return;
+            document.getElementById('modal-title').innerText = product.name;
+            document.getElementById('modal-icon').innerText = product.icon;
+            
+            document.getElementById('modal-rating').innerHTML = `
+                <div class="flex items-center gap-2">
+                    ${generateStarsHTML(product.id, product.rating, true)}
+                    <span class="text-xs text-slate-400">(${product.reviews} sharh)</span>
+                </div>`;
+
+            document.getElementById('modal-installment').innerHTML = `Muddatli to'lov: ${product.installment}`;
+            document.getElementById('modal-old-price').innerText = formatPrice(product.oldPrice || product.price);
+            document.getElementById('modal-price').innerHTML = `${formatPrice(product.price, false)} <span class="text-sm font-bold text-slate-400">so'm</span>`;
+            document.getElementById('modal-ai-desc').innerText = product.aiDesc;
+
+            const tableBody = document.getElementById('modal-specs-table');
+            let tableRows = '';
+            for (const [key, value] of Object.entries(product.specs)) {
+                tableRows += `<tr><td class="px-4 py-2 text-slate-400 w-1/3">${key}</td><td class="px-4 py-2 text-slate-900 dark:text-white font-medium">${value}</td></tr>`;
+            }
+            tableBody.innerHTML = tableRows;
+
+            document.getElementById('modal-action-btn-container').innerHTML = `
+                <button onclick="addToCart(${product.id}, '${product.name}', ${product.price}, '${product.icon}'); closeProductModal();" class="w-full ai-gradient text-slate-950 py-3 rounded-xl font-extrabold shadow-lg cursor-none">Savatchaga qo'shish 🛒</button>`;
+            document.getElementById('product-modal').classList.remove('hidden');
+            setTimeout(initCursorHoverEffects, 50);
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+
+        function openProfileModal() {
+            showCustomModal("👤", "Shaxsiy Kabinet", "Karavan AI tizimi faol. Xush kelibsiz!");
+        }
+
+        function showCustomModal(icon, title, desc) {
+            document.getElementById('custom-modal-icon').innerText = icon;
+            document.getElementById('custom-modal-title').innerText = title;
+            document.getElementById('custom-modal-desc').innerHTML = desc;
+            document.getElementById('custom-modal').classList.remove('hidden');
+            setTimeout(initCursorHoverEffects, 50);
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        // SAVATCHA MANTIQI
+        function addToCart(id, name, price, icon) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity += 1;
+            } else {
+                cart.push({ id, name, price, icon, quantity: 1 });
+            }
+            updateCartUI();
+        }
+
+        function changeQuantity(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    removeFromCart(id);
+                } else {
+                    updateCartUI();
+                }
+            }
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(i => i.id !== id);
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items-container');
+            const totalText = document.getElementById('cart-total-price');
+            const count = cart.reduce((sum, i) => sum + i.quantity, 0);
+            
+            document.getElementById('cart-badge-desktop').innerText = count;
+            document.getElementById('cart-badge-mobile').innerText = count;
+            
+            const totalSum = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            totalText.innerText = formatPrice(totalSum);
+
+            if (cart.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-400 py-12">Savatchangiz bo'sh 🛒</div>`;
+                return;
+            }
+            
+            let html = '';
+            cart.forEach(item => {
+                html += `
+                    <div class="flex items-center justify-between gap-3 bg-white dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 transition-all">
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <div class="text-2xl p-2 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200/60 dark:border-slate-800">${item.icon}</div>
+                            <div class="flex-1 min-w-0">
+                                <h5 class="font-bold text-xs md:text-sm truncate text-slate-900 dark:text-white">${item.name}</h5>
+                                <p class="text-xs text-cyan-500 dark:text-cyan-400 font-black mt-0.5">${formatPrice(item.price * item.quantity)}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 px-2 py-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <button onclick="changeQuantity(${item.id}, -1)" class="w-6 h-6 flex items-center justify-center font-black text-slate-400 hover:text-red-500 transition cursor-none">-</button>
+                            <span class="text-xs font-black px-1 text-slate-900 dark:text-white min-w-[16px] text-center">${item.quantity}</span>
+                            <button onclick="changeQuantity(${item.id}, 1)" class="w-6 h-6 flex items-center justify-center font-black text-slate-400 hover:text-cyan-400 transition cursor-none">+</button>
+                        </div>
+                        
+                        <button onclick="removeFromCart(${item.id})" class="text-slate-400 hover:text-red-500 p-1.5 rounded-xl hover:bg-red-500/10 transition cursor-none" title="Butunlay o'chirish">
+                            🗑️
+                        </button>
+                    </div>`;
+            });
+            container.innerHTML = html;
+            setTimeout(initCursorHoverEffects, 50);
+        }
+
+        function toggleCartDrawer() {
+            document.getElementById('cart-drawer').classList.toggle('translate-x-full');
+            document.getElementById('cart-overlay').classList.toggle('hidden');
+        }
+
+        document.getElementById('cart-overlay').onclick = toggleCartDrawer;
+
+        function checkoutOrder() {
+            if(cart.length === 0) return;
+            const totalSum = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            toggleCartDrawer();
+            cart = [];
+            updateCartUI();
+            showCustomModal("🚀", "Buyurtma Tayyor!", `Xaridingiz yakunlandi: ${formatPrice(totalSum)}.`);
+        }
+
+        function toggleAIChat() {
+            document.getElementById('ai-chat-window').classList.toggle('hidden');
+        }
+
+        function formatPrice(num, withSuffix = true) {
+            let formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            return withSuffix ? formatted + " so'm" : formatted;
+        }
+
+        function handleAiKeyPress(event) {
+            if (event.key === 'Enter') sendAiMessage();
+        }
+
+        // LIKE VA DISLIKE BOSISH FUNKSIYASI
+        function toggleAiFeedback(button, type) {
+            const parent = button.parentElement;
+            const likeBtn = parent.querySelector('.like-btn');
+            const dislikeBtn = parent.querySelector('.dislike-btn');
+
+            if (type === 'like') {
+                const isAlreadyLiked = likeBtn.classList.contains('text-cyan-400');
+                if (isAlreadyLiked) {
+                    likeBtn.classList.remove('text-cyan-400', 'scale-110', 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]');
+                } else {
+                    likeBtn.classList.add('text-cyan-400', 'scale-110', 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]');
+                    dislikeBtn.classList.remove('text-red-500', 'scale-110', 'drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]');
+                }
+            } else if (type === 'dislike') {
+                const isAlreadyDisliked = dislikeBtn.classList.contains('text-red-500');
+                if (isAlreadyDisliked) {
+                    dislikeBtn.classList.remove('text-red-500', 'scale-110', 'drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]');
+                } else {
+                    dislikeBtn.classList.add('text-red-500', 'scale-110', 'drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]');
+                    likeBtn.classList.remove('text-cyan-400', 'scale-110', 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]');
+                }
+            }
+        }
+
+        // TEXT-TO-SPEECH (AI MATNNI OVOZLI O'QISH FUNKSIYASI)
+        function speakAiText(rawHTMLorText) {
+            window.speechSynthesis.cancel();
+
+            let div = document.createElement("div");
+            div.innerHTML = rawHTMLorText;
+            let cleanText = div.textContent || div.innerText || "";
+
+            cleanText = cleanText.replace(/mc²/g, " m c kvadrat").replace(/·/g, " ko'paytirilgan ");
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'uz-UZ';
+            utterance.rate = 1.0;     
+            utterance.pitch = 1.1;    
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // TO'G'RILANGAN VA YANGILANGAN DYNAMIC AI SYSTEM RESPONSES
+        function sendAiMessage() {
+            const inputElement = document.getElementById('ai-user-input');
+            const messageBox = document.getElementById('ai-messages-box');
+            const indicator = document.getElementById('user-typing-indicator');
+            const userText = inputElement.value.trim();
+
+            if (userText === "") return;
+
+            // Xabarni yuborganda yozish indikatorini darhol yashiramiz
+            indicator.classList.add('hidden');
+
+            messageBox.innerHTML += `
+                <div class="bg-cyan-950/50 p-3 rounded-2xl rounded-tl-none ml-auto text-cyan-300 font-semibold border border-cyan-800/30 max-w-[85%] break-words shadow-sm">
+                    ${userText}
+                </div>`;
+            
+            inputElement.value = "";
+            messageBox.scrollTop = messageBox.scrollHeight;
+
+            const typingId = "ai-cyber-radar-loader";
+            messageBox.innerHTML += `
+                <div id="${typingId}" class="flex items-center gap-2 bg-slate-900 border border-cyan-500/30 p-3 rounded-2xl rounded-tl-none max-w-[70%]">
+                    <div class="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-cyan-400 text-[11px] font-bold tracking-wider uppercase">Karavan AI Scanning...</span>
+                </div>`;
+            messageBox.scrollTop = messageBox.scrollHeight;
+
+            let aiResponse = "";
+            let speechResponse = ""; 
+            const lowerText = userText.toLowerCase();
+
+            if (lowerText.includes("nasa") || lowerText.includes("tesla") || lowerText.includes("einstein") || lowerText.includes("fizika")) {
+                aiResponse = `
+                    <div class="space-y-3 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-4 rounded-xl border border-cyan-400/40 text-slate-100 shadow-2xl font-sans">
+                        <div class="flex justify-between items-center border-b border-cyan-500/20 pb-2">
+                            <span class="text-cyan-400 font-black tracking-widest text-xs font-mono">🌌 NASA SPACE HUB</span>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-mono">⚡ BATTERY: 100%</span>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">Nikola Tesla va Albert Einstein laboratoriyasidan olingan yuqori aniqlikdagi fizika formulalari muvaffaqiyatli yuklandi:</p>
+                        <div class="p-3 bg-black/40 rounded-lg border border-purple-500/30 font-mono text-center text-cyan-300">
+                            Massa va energiya bog'liqligi:<br>
+                            <span class="text-base text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 font-black tracking-wider">E = mc²</span>
+                        </div>
+                        <div class="p-3 bg-black/40 rounded-lg border border-purple-500/30 font-mono text-center text-cyan-300">
+                            Elektromagnit quvvat sarfi:<br>
+                            <span class="text-base text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 font-black tracking-wider">W = P &middot; t</span>
+                        </div>
+                    </div>`;
+                speechResponse = "Nasa kosmik markazi tizimi yuklandi. Nikola Tesla va Albert Eynshteyn kvant formulalari faollashtirildi: E teng m c kvadrat.";
+            } 
+            else if (lowerText.includes("bmw") || lowerText.includes("bugatti") || lowerText.includes("moshina")) {
+                aiResponse = "🏎️ **Karavan Supercars Moduli:** Katalogimizda neon gologrammali yuqori texnologiyali **BMW M Performance** HUD smart displeylari mavjud! Shuningdek, yaqin kunlarda **Bugatti Chiron** boshqaruv aerodinamik tizimlari ham platformamizga qo'shiladi.";
+                speechResponse = "Karavan Superkars moduli. Katalogimizda neon gologrammali Be em ve Em Performans smart displeylari mavjud! Bugatti Chiron aerodinamik tizimlari tez orada qo'shiladi.";
+            } 
+            else if (lowerText.includes("salom") || lowerText.includes("hello")) {
+                aiResponse = "👋 **Assalomu alaykum!** Men Karavan AI aqlli yordamchisiman. Tizim to'liq yangilandi, yozish indikatorlari hamda ovozli javob qaytarish rejimi muvaffaqiyatli ishga tushdi! Qanday gadjet qidirmoqdasiz?";
+                speechResponse = "Assalomu alaykum! Men Karavan AI yordamchisiman. Tizim to'liq to'g'rilandi va ovozli rejim ishga tushdi! Qanday gadjet qidiryapsiz?";
+            } 
+            else if (lowerText.includes("narx") || lowerText.includes("mahsulot") || lowerText.includes("katalog")) {
+                aiResponse = "📦 **Narxlar Tahlili:** Bizning platformada eng hamyonbop narxlar kafolatlangan! Hozirgi vaqtda **iPhone 15 Pro** va **MacBook Air M2** eng ko'p yulduz olgan hamda yuqori talabga ega mahsulotlar hisoblanadi.";
+                speechResponse = "Platformamizda eng hamyonbop narxlar kafolatlangan! Ayfon 15 Pro va Makbuk Eyr Em 2 hozirda eng ko'p yuqori reyting olgan mahsulotlar hisoblanadi.";
+            } 
+            else {
+                aiResponse = "🧠 **Karavan Tahlil Markazi:** Buyruq qabul qilindi. Kvant tizimi mukammal holatda ishlamoqda. NASA kosmik tadqiqotlari, BMW avtomobillari yoki haftalik chegirmalar haqida so'rashingiz mumkin!";
+                speechResponse = "Karavan tahlil markazi. Buyruq qabul qilindi. Tizim mukammal holatda ishlamoqda. Nasa, Be em ve yoki chegirmalar haqida so'rashingiz mumkin.";
+            }
+
+            setTimeout(() => {
+                const loader = document.getElementById(typingId);
+                if (loader) loader.remove();
+
+                messageBox.innerHTML += `
+                    <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-800 max-w-[85%] text-slate-800 dark:text-slate-200 break-words flex flex-col gap-2 shadow-sm leading-relaxed">
+                        <div>${aiResponse}</div>
+                        <div class="flex items-center gap-3 pt-1 border-t border-slate-100 dark:border-slate-800/60 text-[11px] text-slate-400 select-none">
+                            <button onclick="toggleAiFeedback(this, 'like')" class="like-btn font-bold hover:text-cyan-400 transition-all duration-150 active:scale-90 cursor-none">👍 Foydali</button>
+                            <button onclick="toggleAiFeedback(this, 'dislike')" class="dislike-btn font-bold hover:text-red-500 transition-all duration-150 active:scale-90 cursor-none">👎 Yoqmadi</button>
+                        </div>
+                    </div>`;
+                messageBox.scrollTop = messageBox.scrollHeight;
+                
+                speakAiText(speechResponse);
+                setTimeout(initCursorHoverEffects, 50);
+            }, 800);
+        }
+
+        window.onload = function() {
+            renderProducts();
+            updateCartUI();
+            setTimeout(initCursorHoverEffects, 100);
+        };
+    </script>
+</body>
+</html>

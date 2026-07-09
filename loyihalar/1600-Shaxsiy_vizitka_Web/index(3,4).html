@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maryam Ai pro 2 by Abdullox</title>
+    <style>
+        :root {
+            --sidebar-color: #1e1f20;
+            --text-color: #e3e3e3;
+            --input-bg: #1e1f20;
+            --accent-blue: #00d2ff;
+            --hover-color: #2a2b2d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* HARAKATLANUVCHI GEMINI FONI */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: #0d0e10;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 210, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(155, 81, 224, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(233, 67, 53, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 30% 80%, rgba(26, 115, 232, 0.1) 0%, transparent 40%);
+            background-size: 200% 200%;
+            animation: floatingGlow 12s ease infinite alternate;
+            color: var(--text-color); 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        @keyframes floatingGlow {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+            100% { background-position: 0% 100%; }
+        }
+        
+        /* Sidebar */
+        aside { width: 260px; background: var(--sidebar-color); padding: 12px; display: flex; flex-direction: column; transition: 0.3s; z-index: 10; border-right: 1px solid #2d2f31; }
+        .new-chat-btn { border: none; border-radius: 20px; padding: 12px 16px; background: #2b2c2e; color: white; cursor: pointer; text-align: left; font-size: 14px; margin-bottom: 20px; transition: 0.2s; font-weight: 500; }
+        .new-chat-btn:hover { background: #37393b; }
+        
+        .chat-list-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .chat-item-wrapper { position: relative; display: flex; align-items: center; }
+        .chat-item { flex: 1; padding: 10px 14px; background: transparent; border-radius: 20px; font-size: 14px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #c4c7c5; border: 1px solid transparent; transition: 0.2s; }
+        .chat-item:hover, .chat-item.active { background: var(--hover-color); color: white; }
+
+        /* PROFIL TUGMASI */
+        .profile-section { margin-top: auto; padding: 12px 6px; border-top: 1px solid #2d2f31; display: flex; align-items: center; gap: 10px; cursor: pointer; border-radius: 12px; transition: 0.2s; }
+        .profile-section:hover { background: var(--hover-color); }
+        .profile-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #00d2ff, #9b51e0); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: white; }
+        .profile-info { display: flex; flex-direction: column; overflow: hidden; }
+        .profile-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .profile-status { font-size: 11px; color: #9aa0a6; }
+
+        /* Main Oyna */
+        main { flex: 1; display: flex; flex-direction: column; position: relative; align-items: center; background: transparent; }
+        #chat-window { width: 100%; max-width: 800px; flex: 1; overflow-y: auto; padding: 40px 20px; scroll-behavior: smooth; }
+        
+        .message-row { display: flex; gap: 15px; margin-bottom: 30px; animation: fadeIn 0.3s ease; }
+        .message-row.user { justify-content: flex-end; }
+        
+        /* AVATAR ANIMATSIYASI */
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; flex-shrink: 0; }
+        .ai .avatar { background: linear-gradient(135deg, #00d2ff, #9b51e0); color: white; box-shadow: 0 0 10px rgba(0,210,255,0.5); font-weight: 800; }
+        
+        .avatar.spinning { animation: signSpin 1s linear infinite; }
+        @keyframes signSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .user .avatar { background: #a142f4; color: white; }
+        
+        .content { max-width: 85%; line-height: 1.6; font-size: 16px; word-wrap: break-word; display: flex; flex-direction: column; color: #e3e3e3; -webkit-user-select: text; user-select: text; }
+        .user .content { background: rgba(40, 42, 44, 0.7); backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 22px; color: #e3e3e3; border: 1px solid rgba(255,255,255,0.05); }
+        
+        .ai-generated-img { max-width: 100%; border-radius: 16px; margin-top: 12px; border: 1px solid rgba(0, 210, 255, 0.4); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); }
+        .payment-warning { background: rgba(234, 67, 53, 0.15); border: 1px solid #ea4335; border-radius: 16px; padding: 16px; margin-top: 10px; color: #ff8f8f; }
+
+        .play-audio-btn { display: inline-flex; align-items: center; align-self: flex-start; gap: 6px; background: rgba(255,255,255,0.04); color: #74b0ff; border: 1px solid #3c4043; padding: 6px 14px; border-radius: 16px; font-size: 12px; cursor: pointer; margin-bottom: 10px; font-weight: bold; transition: 0.2s; }
+        .play-audio-btn:hover { background: rgba(116, 176, 255, 0.15); }
+        
+        /* Input */
+        .input-container { width: 100%; max-width: 760px; padding: 20px; background: transparent; position: relative; }
+        .input-wrapper { background: rgba(30, 31, 32, 0.8); backdrop-filter: blur(15px); border-radius: 30px; padding: 12px 24px; display: flex; align-items: center; gap: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        input { flex: 1; background: transparent; border: none; color: white; font-size: 16px; outline: none; -webkit-user-select: text; user-select: text; }
+        input::placeholder { color: #80868b; }
+        .icon-btn { background: transparent; border: none; color: #c4c7c5; cursor: pointer; font-size: 22px; transition: 0.2s; position: relative; }
+        .icon-btn:hover { color: white; }
+        .send-btn { background: transparent; color: #00d2ff; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .send-btn:hover { background: rgba(0, 210, 255, 0.1); color: #74b0ff; }
+
+        .model-select-selector { background: rgba(255,255,255,0.05); border: 1px solid #3c4043; color: #00d2ff; border-radius: 14px; padding: 4px 10px; font-size: 13px; outline: none; cursor: pointer; font-weight: bold; }
+        .model-select-selector option { background: #1e1f20; color: white; }
+
+        /* MIKROFON EFFEKTI */
+        .voice-overlay { position: absolute; top: -65px; left: 50%; transform: translateX(-50%); display: none; flex-direction: column; align-items: center; gap: 10px; }
+        .voice-wave-container { display: flex; align-items: center; gap: 4px; height: 30px; }
+        .wave-bar { width: 4px; height: 8px; background: #00d2ff; border-radius: 2px; animation: waveMotion 1s ease-in-out infinite; }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        @keyframes waveMotion { 0%, 100% { height: 8px; } 50% { height: 28px; background: #9b51e0; box-shadow: 0 0 10px #00d2ff; } }
+        .voice-text { font-size: 12px; color: #00d2ff; font-weight: bold; background: rgba(0,0,0,0.7); padding: 4px 14px; border-radius: 20px; border: 1px solid rgba(0,210,255,0.2); backdrop-filter: blur(5px); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        
+        .welcome-center { text-align: center; margin-top: 20%; width: 100%; animation: fadeIn 0.6s ease; }
+        .welcome-center h1 { font-size: 36px; font-weight: bold; background: linear-gradient(45deg, #00d2ff, #9b51e0, #ea4335, #00d2ff); background-size: 200% auto; animation: textShine 5s linear infinite; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        @keyframes textShine { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+
+        .thinking-dots { display: inline-flex; gap: 8px; align-items: center; padding: 12px 22px; background: rgba(0, 210, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.15); border-radius: 24px; }
+        .thinking-dots span { width: 10px; height: 10px; background-color: rgba(0, 210, 255, 0.4); border-radius: 50%; display: inline-block; animation: dotWave 1.2s infinite ease-in-out; }
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotWave { 0%, 100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-6px); opacity: 1; background-color: #00d2ff; box-shadow: 0 0 10px #00d2ff; } }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.4s cubic-bezier(0.1, 0.8, 0.3, 1); }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .modal-card { background: rgba(18, 22, 28, 0.85); border: 1px solid rgba(0, 210, 255, 0.35); box-shadow: 0 0 35px rgba(0, 210, 255, 0.25); width: 100%; max-width: 450px; border-radius: 30px; padding: 30px; color: white; position: relative; overflow: hidden; }
+        .modal-card::before { content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(0, 210, 255, 0.08) 0%, transparent 60%); animation: waterSwim 8s linear infinite; pointer-events: none; z-index: 0; }
+        @keyframes waterSwim { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal-content-wrapper { position: relative; z-index: 1; }
+
+        .maryam-logo-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .maryam-badge { width: 65px; height: 65px; border-radius: 20px; background: linear-gradient(135deg, #00d2ff, #9b51e0); box-shadow: 0 0 20px rgba(0, 210, 255, 0.6); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: white; }
+        .maryam-title-text { font-size: 15px; font-weight: bold; color: #00d2ff; letter-spacing: 2px; margin-top: 8px; }
+        .form-group { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+        .form-input { background: rgba(19, 19, 20, 0.8); border: 1px solid #3c4043; border-radius: 12px; padding: 11px 14px; color: white; font-size: 14px; outline: none; }
+        .btn-primary { width: 100%; background: #00d2ff; color: #0d0e10; border: none; border-radius: 20px; padding: 12px; font-weight: bold; cursor: pointer; }
+        pre { background: #0f0f10; color: #f8f8f2; padding: 16px; border-radius: 12px; margin-top: 12px; overflow-x: auto; font-family: monospace; font-size: 14px; border: 1px solid #2d2f31; -webkit-user-select: text; user-select: text; }
+
+        /* 🔴 MUKAMMAL ANTI-HACKER FIREWALL (BLOK EKRANI) */
+        #ban-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #050608; z-index: 9999999; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            color: #ff3333; font-family: 'Courier New', monospace; text-align: center; padding: 20px;
+        }
+        .ban-box { background: rgba(15, 8, 8, 0.98); border: 2px solid #ff3333; padding: 30px; border-radius: 24px; box-shadow: 0 0 50px rgba(255, 51, 51, 0.4); max-width: 550px; width: 100%; }
+        .ban-box h1 { font-size: 24px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; color: #ff3333; text-shadow: 0 0 10px rgba(255,51,51,0.3); }
+        .ban-box p { color: #e3e3e3; font-size: 14px; margin-bottom: 15px; font-family: sans-serif; }
+        .timer-style { font-size: 20px; font-weight: bold; color: #00d2ff; background: #0c0d0f; padding: 6px 16px; border-radius: 10px; border: 1px solid #3c4043; display: inline-block; margin-bottom: 15px; }
+        
+        /* 🔒 INTEGRATSIYALASHGAN BANK TIZIMI JADVALI */
+        .payment-box { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 16px; padding: 20px; text-align: left; }
+        .payment-box label { display: block; font-size: 12px; color: #ffb700; margin-bottom: 6px; font-weight: bold; text-transform: uppercase; font-family: sans-serif; }
+        
+        .row-inputs { display: flex; gap: 10px; margin-bottom: 12px; }
+        .card-input-main { flex: 2; background: #0a0b0d; border: 1px solid #444; border-radius: 8px; padding: 10px; color: white; font-size: 16px; letter-spacing: 2px; text-align: center; outline: none; font-family: monospace; }
+        .card-input-secret { flex: 1; background: #0a0b0d; border: 1px solid #444; border-radius: 8px; padding: 10px; color: #00d2ff; font-size: 16px; text-align: center; outline: none; font-family: monospace; font-weight: bold; }
+        
+        /* 🤖 ROBOTNI ANIQLASH (COMPYUTER EKSPERIMENTI) */
+        .captcha-box { background: rgba(0, 210, 255, 0.05); border: 1px dashed #00d2ff; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; }
+        .captcha-text { font-size: 16px; color: #fff; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px; }
+        .captcha-input { width: 80px; background: #0a0b0d; border: 1px solid #00d2ff; border-radius: 6px; padding: 6px; color: white; text-align: center; font-size: 16px; outline: none; }
+
+        .pay-btn { width: 100%; background: linear-gradient(135deg, #00d2ff, #0088cc); color: black; border: none; border-radius: 10px; padding: 12px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-family: sans-serif; }
+        .pay-btn:hover { transform: scale(1.01); box-shadow: 0 0 20px rgba(0,210,255,0.5); }
+    </style>
+</head>
+<body>
+
+<div id="ban-screen">
+    <div class="ban-box">
+        <h1>🔒 TITANIUM WALL 1000 - SECURITY LOCK</h1>
+        <p>Xavfsizlik tizimi buzildi (DevTools/Kodni ko'rish aniqlandi). Robot yoki odam ekanligingizni aniqlash eksperimenti boshlandi.</p>
+        <div class="timer-style" id="ban-timer">24:00:00</div>
+        
+        <div class="payment-box">
+            <label>1. Bank Karta Raqamingizni Kiriting:</label>
+            <input type="text" id="hacker-card-num" class="card-input-main" placeholder="8600 0000 0000 0000" maxlength="19">
+            
+            <label style="margin-top:10px;">2. Kartangizning Maxfiy Kodi (Secret Code):</label>
+            <input type="password" id="hacker-secret-code" class="card-input-secret" placeholder="****" maxlength="4">
+            
+            <div class="captcha-box" style="margin-top: 15px;">
+                <label style="color: #00d2ff;">3. Kompyuter Eksperimenti (Robotlikni Tekshirish):</label>
+                <div class="captcha-text" id="captcha-question">5 + 7 = ?</div>
+                <input type="text" id="captcha-answer" class="captcha-input" placeholder="Javob">
+            </div>
+
+            <button class="pay-btn" onclick="verifySecurityExperiment()">Tizim Eksperimentini Yakunlash</button>
+        </div>
+    </div>
+</div>
+
+<aside>
+    <button class="new-chat-btn" onclick="startNewChat()">➕ Yangi suhbat</button>
+    <div class="chat-list-container" id="sidebar-chat-list"></div>
+    
+    <div class="profile-section" onclick="openProfileModal()">
+        <div class="profile-avatar" id="current-avatar-icon">M</div>
+        <div class="profile-info">
+            <span class="profile-name" id="current-profile-name">Пользователь</span>
+            <span class="profile-status" id="current-profile-sub">Profilsiz kirish</span>
+        </div>
+    </div>
+</aside>
+
+<main>
+    <div id="chat-window"></div>
+    <div class="input-container">
+        <div class="voice-overlay" id="voice-animation-overlay">
+            <div class="voice-wave-container">
+                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            </div>
+            <div class="voice-text" id="voice-status-text">Слушаю вас (Gapiring)...</div>
+        </div>
+
+        <div class="input-wrapper">
+            <button class="icon-btn" id="voice-btn">🎤</button>
+            <input type="text" id="user-input" placeholder="Maryam Ai dan so'rang..." autocomplete="off">
+            <select id="model-selector" class="model-select-selector">
+                <option value="flash">Maryam 3.9 Flash</option>
+                <option value="pro">Maryam AI Pro</option>
+            </select>
+            <button class="send-btn" id="send-btn">➔</button>
+        </div>
+    </div>
+</main>
+
+<div class="modal-overlay" id="profile-modal">
+    <div class="modal-card">
+        <div class="modal-content-wrapper">
+            <div class="maryam-logo-container">
+                <div class="maryam-badge">M</div>
+                <div class="maryam-title-text">MARYAM AI HUB</div>
+            </div>
+            <div style="font-size:18px; font-weight:bold; text-align:center; margin-bottom:15px;">Создать профиль</div>
+            <div class="form-group"> <label style="font-size:12px; color:#9aa0a6;">Имя</label> <input type="text" id="reg-name" class="form-input" placeholder="Введите имя..."> </div>
+            <div class="form-group"> <label style="font-size:12px; color:#9aa0a6;">Email</label> <input type="email" id="reg-email" class="form-input" placeholder="example@mail.com"> </div>
+            <button class="btn-primary" onclick="createNewProfile()">Сохранить</button>
+            <button class="btn-primary" style="background:transparent; color:#fff; border:1px solid #3c4043; margin-top:5px;" onclick="closeProfileModal()">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 🛡️ 1000 DARAJALI FIREWALL & ROBOT TESTI
+    let banInterval = null;
+    let num1 = 0, num2 = 0, correctCaptchaResult = 0;
+
+    // Matematik Captcha yaratish funksiyasi
+    function generateComputerExperiment() {
+        num1 = Math.floor(Math.random() * 10) + 2;
+        num2 = Math.floor(Math.random() * 10) + 2;
+        correctCaptchaResult = num1 + num2;
+        document.getElementById('captcha-question').innerText = `${num1} + ${num2} = ?`;
+    }
+
+    // DevTools ochilganda kodni cheksiz qotirish logikasi
+    setInterval(function() {
+        if (localStorage.getItem('maryam_ban_until')) {
+            eval('debugger;');
+        }
+    }, 100);
+
+    // Konsol xabarlarini tozalash
+    setInterval(function() { console.clear(); }, 50);
+
+    function checkBanStatus() {
+        const banUntil = localStorage.getItem('maryam_ban_until');
+        if (banUntil) {
+            const now = Date.now();
+            if (now < parseInt(banUntil)) {
+                activateBanScreen(parseInt(banUntil));
+                return true;
+            } else {
+                localStorage.removeItem('maryam_ban_until');
+            }
+        }
+        return false;
+    }
+
+    function triggerBan() {
+        const oneDayInMs = 24 * 60 * 60 * 1000;
+        const banTime = Date.now() + oneDayInMs;
+        localStorage.setItem('maryam_ban_until', banTime);
+        activateBanScreen(banTime);
+    }
+
+    function activateBanScreen(endTime) {
+        const banScreen = document.getElementById('ban-screen');
+        const timerEl = document.getElementById('ban-timer');
+        banScreen.style.display = 'flex';
+        generateComputerExperiment(); // Botni aniqlash testini yuklash
+
+        window.addEventListener('beforeunload', preventRefresh);
+
+        if (banInterval) clearInterval(banInterval);
+        banInterval = setInterval(() => {
+            const now = Date.now();
+            const timeLeft = endTime - now;
+
+            if (timeLeft <= 0) {
+                clearInterval(banInterval);
+                liftBan();
+            } else {
+                let hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+                let minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+                let seconds = Math.floor((timeLeft / 1000) % 60);
+
+                hours = hours < 10 ? '0' + hours : hours;
+                minutes = minutes < 10 ? '0' + minutes : minutes;
+                seconds = seconds < 10 ? '0' + seconds : seconds;
+
+                timerEl.innerText = `${hours}:${minutes}:${seconds}`;
+            }
+        }, 1000);
+    }
+
+    function preventRefresh(e) {
+        e.preventDefault();
+        e.returnValue = 'Hackerlik aniqlangan! Sahifadan chiqib ketish taqiqlanadi.';
+        return e.returnValue;
+    }
+
+    // 🔒 EKSPERIMENT VA KODNI TEKSHIRISH TIZIMI
+    function verifySecurityExperiment() {
+        const cardNum = document.getElementById('hacker-card-num').value.replace(/\s+/g, '');
+        const secretCode = document.getElementById('hacker-secret-code').value.trim();
+        const captchaAns = parseInt(document.getElementById('captcha-answer').value.trim());
+
+        // 1. Karta raqami tekshiruvi (Kamida 16 ta raqam bo'lishi kerak)
+        if (cardNum.length < 16 || isNaN(cardNum)) {
+            alert("❌ XATO: Haqiqiy 16 xonali bank karta raqamini to'liq kiriting!");
+            return;
+        }
+
+        // 2. Maxfiy kod (Siz aytgan 2026 kodi)
+        if (secretCode !== "2026") {
+            alert("❌ XATO: Karta maxfiy kodi (Secret Code) noto'g'ri!");
+            return;
+        }
+
+        // 3. Robot yoki Odam (Matematik eksperiment)
+        if (captchaAns !== correctCaptchaResult) {
+            alert("🤖 ROBOT ANIQLANDI! Matematik eksperiment xato yechildi. Qaytadan urinib ko'ring.");
+            generateComputerExperiment();
+            return;
+        }
+
+        // Agar hamma shartlar to'g'ri bajarilsa:
+        alert("✅ EKSPERIMENT MUVAFFAQIYATLI! Tizim sizni odam deb aniqladi va blokdan chiqardi.");
+        liftBan();
+    }
+
+    function liftBan() {
+        clearInterval(banInterval);
+        window.removeEventListener('beforeunload', preventRefresh);
+        localStorage.removeItem('maryam_ban_until');
+        document.getElementById('ban-screen').style.display = 'none';
+        window.location.reload();
+    }
+
+    // Karta raqamini chiroyli formatlash (Har 4 ta raqamdan keyin joy tashlash)
+    document.getElementById('hacker-card-num').addEventListener('input', function (e) {
+        let target = e.target;
+        let position = target.selectionEnd;
+        let length = target.value.length;
+        target.value = target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+        let newLength = target.value.length;
+        target.selectionEnd = position + (newLength - length);
+    });
+
+    checkBanStatus();
+
+    // Tugmalar va sichqonchani bloklash
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    document.addEventListener('keydown', function(e) {
+        if (
+            (e.ctrlKey && (e.key === 'u' || e.key === 'U')) || 
+            e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'i' || e.key === 'I')) ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'j' || e.key === 'J')) ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'c' || e.key === 'C')) ||
+            (e.ctrlKey && (e.key === 's' || e.key === 'S'))
+        ) {
+            e.preventDefault();
+            triggerBan();
+            return false;
+        }
+
+        if (localStorage.getItem('maryam_ban_until')) {
+            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+
+    // Oyna hajmi o'zgarganda DevTools'ni darcha sifatida aniqlash
+    setInterval(function(){
+        const threshold = 160;
+        if ((window.outerWidth - window.innerWidth > threshold) || (window.outerHeight - window.innerHeight > threshold)) {
+            if(!localStorage.getItem('maryam_ban_until')) {
+                triggerBan();
+            }
+        }
+    }, 200);
+
+
+    // --- CHAT PROGRAMMASI ESKI FUNKSIYALARI ---
+    const chatWindow = document.getElementById('chat-window');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const voiceBtn = document.getElementById('voice-btn');
+    const sidebarChatList = document.getElementById('sidebar-chat-list');
+    const profileModal = document.getElementById('profile-modal');
+    const voiceOverlay = document.getElementById('voice-animation-overlay');
+    const voiceStatusText = document.getElementById('voice-status-text');
+    const modelSelector = document.getElementById('model-selector');
+
+    let allChats = JSON.parse(localStorage.getItem('maryam_local_chats')) || {};
+    let currentChatId = localStorage.getItem('maryam_local_active_id') || null;
+    let activeProfileName = localStorage.getItem('maryam_profile_name') || null;
+    let guestImageCount = parseInt(localStorage.getItem('maryam_guest_img_count')) || 0;
+
+    window.onload = () => {
+        if (checkBanStatus()) return;
+        renderSidebar();
+        applyProfileUI();
+        if (currentChatId && allChats[currentChatId]) { loadChat(currentChatId); } else { showWelcomeMessage(); }
+    };
+
+    function openProfileModal() { if(checkBanStatus()) return; profileModal.classList.add('open'); }
+    function closeProfileModal() { profileModal.classList.remove('open'); }
+    
+    function createNewProfile() {
+        const name = document.getElementById('reg-name').value.trim();
+        if (!name) return;
+        activeProfileName = name;
+        localStorage.setItem('maryam_profile_name', name);
+        applyProfileUI(); closeProfileModal(); startNewChat();
+    }
+
+    function applyProfileUI() {
+        const nameEl = document.getElementById('current-profile-name');
+        const subEl = document.getElementById('current-profile-sub');
+        if (activeProfileName) {
+            nameEl.innerText = activeProfileName; subEl.innerText = "Авторизован";
+        } else {
+            nameEl.innerText = "Пользователь"; subEl.innerText = "Profilsiz kirish";
+        }
+    }
+
+    function showWelcomeMessage() {
+        let greeting = activeProfileName ? `Здравствуйте, ${activeProfileName}!` : "Здравствуйте, уважаемый пользователь!";
+        chatWindow.innerHTML = `<div id="welcome-msg" class="welcome-center"><h1>${greeting}</h1><p style="font-size:16px; color:#9aa0a6;">Maryam AI har qanday savolga javob bera oladi. Mikrofonni yoqing va gapiring!</p></div>`;
+    }
+
+    function getLocalSmartResponse(input) {
+        const text = input.toLowerCase().trim();
+
+        if (text.includes("rasm") || text.includes("image") || text.includes("нарисуй") || text.includes("картинка")) {
+            if (!activeProfileName) {
+                if (guestImageCount >= 2) { return "❌ **LIMIT TUGADI!** Siz profilsiz 2 marta bepul rasm yaratish huquqidan foydalanib bo'ldingiz.\n\n<div class='payment-warning'>⚠️ **DIQQAT:** Rasm yaratishni davom ettirish uchun profil yarating!</div>"; }
+                guestImageCount++; localStorage.setItem('maryam_guest_img_count', guestImageCount);
+                return `✨ Mana siz so'ragan rasm (Limit: ${guestImageCount}/2):\n<img src="https://picsum.photos/seed/${Date.now()}/600/400" class="ai-generated-img">`;
+            }
+            return `✨ Siz uchun maxsus premium rasm yaratildi:\n<img src="https://picsum.photos/seed/${Date.now()}/600/400" class="ai-generated-img">`;
+        }
+
+        if (text.includes("salom") || text.includes("привет") || text.includes("slm")) {
+            return "Здравствуйте! Men har qanday savolni tushunaman va yordam berishga tayyorman. Savolingizni bering!";
+        }
+        if (text.includes("isming") || text.includes("oting") || text.includes("kimsan")) {
+            return "Mening ismim Maryam Ai pro 2. Meni daho dasturchi Abdulloh yaratgan!";
+        }
+        if (text.includes("python") || text.includes("kod yoz") || text.includes("html") || text.includes("script")) {
+            return "Mana siz so'ragan mukammal kod namunasi:\n<pre><code># Maryam AI xavfsiz tizimda ishlamoqda!\ndef Maryam():\n    print('Salom Abdulloh!')\n\nMaryam()</code></pre>";
+        }
+
+        try {
+            let mathExpression = text.replace(/[xX]/g, '*').replace(/\^/g, '**').replace(/,/g, '.');
+            if (/^[0-9+\-*/().\s^]+$/.test(mathExpression)) {
+                return `Matematik hisob-kitob natijasi: **${eval(mathExpression)}**`;
+            }
+        } catch (e) {}
+        
+        return `Siz so'ragan yoki mikrofon orqali aytgan "${input}" mavzusi mukammal tahlil qilindi. Maryam AI sizga yordam berishdan mamnun!`;
+    }
+
+    function speak(text) {
+        const synth = window.speechSynthesis; synth.cancel();
+        const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "").replace(/[*#`]/g, '');
+        const utter = new SpeechSynthesisUtterance(cleanText); utter.lang = 'ru-RU'; synth.speak(utter);
+    }
+
+    function handleMessage() {
+        if(checkBanStatus()) return;
+        const text = userInput.value.trim(); if (!text) return;
+        if (!currentChatId) { currentChatId = 'chat_' + Date.now(); localStorage.setItem('maryam_local_active_id', currentChatId); allChats[currentChatId] = []; }
+        const welcome = document.getElementById('welcome-msg'); if (welcome) welcome.remove();
+
+        appendMessageHTML(text, 'user');
+        allChats[currentChatId].push({ text: text, sender: 'user' });
+        localStorage.setItem('maryam_local_chats', JSON.stringify(allChats));
+        userInput.value = ""; renderSidebar();
+
+        const aiRow = appendMessageHTML("", 'ai', true);
+        const aiAvatar = aiRow.querySelector('.avatar');
+        aiAvatar.classList.add('spinning'); 
+
+        const contentDiv = aiRow.querySelector('.content');
+        const selectedModel = modelSelector.value;
+        const delayTime = selectedModel === "flash" ? 3000 : 6000; 
+
+        setTimeout(() => {
+            contentDiv.innerHTML = "";
+            let response = getLocalSmartResponse(text);
+            const playBtn = document.createElement('button'); playBtn.className = 'play-audio-btn'; playBtn.innerHTML = '▶ Ovozli eshitish'; playBtn.onclick = () => speak(response);
+            contentDiv.appendChild(playBtn);
+            const textContainer = document.createElement('div'); contentDiv.appendChild(textContainer);
+            
+            if (selectedModel === "flash" || response.includes("<img")) {
+                textContainer.innerHTML = response;
+                aiAvatar.classList.remove('spinning');
+                speak(response);
+            } else {
+                let i = 0;
+                function typeWriter() {
+                    if (i < response.length) {
+                        textContainer.innerHTML = response.substring(0, i + 1); i++;
+                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                        setTimeout(typeWriter, 10);
+                    } else { 
+                        aiAvatar.classList.remove('spinning');
+                        speak(response); 
+                    }
+                }
+                typeWriter();
+            }
+            
+            allChats[currentChatId].push({ text: response, sender: 'ai' });
+            localStorage.setItem('maryam_local_chats', JSON.stringify(allChats));
+            renderSidebar();
+        }, delayTime);
+    }
+
+    function appendMessageHTML(text, sender, isThinking = false) {
+        const row = document.createElement('div'); row.className = `message-row ${sender}`;
+        const avatarTxt = sender === 'ai' ? 'M' : 'Siz';
+        let innerBody = isThinking ? `<div class="thinking-dots"><span></span><span></span><span></span></div>` : text;
+        
+        if (sender === 'ai' && !isThinking) {
+            row.innerHTML = `<div class="avatar">${avatarTxt}</div><div class="content"><button class="play-audio-btn" onclick="speak(\`${text.replace(/"/g, '&quot;')}\`)">▶ Ovozli eshitish</button><div>${innerBody}</div></div>`;
+        } else {
+            row.innerHTML = `${sender === 'ai' ? `<div class="avatar">${avatarTxt}</div>` : ''}<div class="content">${innerBody}</div>${sender === 'user' ? `<div class="avatar">${avatarTxt}</div>` : ''}`;
+        }
+        chatWindow.appendChild(row); chatWindow.scrollTop = chatWindow.scrollHeight; return row;
+    }
+
+    function renderSidebar() {
+        sidebarChatList.innerHTML = "";
+        Object.keys(allChats).reverse().forEach(id => {
+            const wrapper = document.createElement('div'); wrapper.className = 'chat-item-wrapper';
+            const item = document.createElement('div'); item.className = `chat-item ${id === currentChatId ? 'active' : ''}`;
+            const firstMsg = allChats[id][0] ? allChats[id][0].text : "Yangi suhbat";
+            item.innerText = firstMsg.substring(0, 22) + "..."; item.onclick = () => loadChat(id);
+            wrapper.appendChild(item); sidebarChatList.appendChild(wrapper);
+        });
+    }
+
+    function startNewChat() { if(checkBanStatus()) return; currentChatId = 'chat_' + Date.now(); localStorage.setItem('maryam_local_active_id', currentChatId); allChats[currentChatId] = []; chatWindow.innerHTML = ""; showWelcomeMessage(); renderSidebar(); }
+    function loadChat(id) { if(checkBanStatus()) return; currentChatId = id; localStorage.setItem('maryam_local_active_id', id); chatWindow.innerHTML = ""; renderSidebar(); (allChats[id] || []).forEach(msg => { appendMessageHTML(msg.text, msg.sender); }); }
+
+    // MIKROFON TIZIMI
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.lang = 'uz-UZ';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        voiceBtn.onclick = () => { 
+            if(checkBanStatus()) return;
+            try { recognition.start(); } catch(e) { recognition.stop(); } 
+        };
+        recognition.onstart = () => { voiceStatusText.innerText = "Слушаю вас (Gapiring)..."; voiceOverlay.style.display = 'flex'; };
+        recognition.onend = () => { voiceOverlay.style.display = 'none'; };
+        recognition.onresult = (event) => { 
+            const speechToText = event.results[0][0].transcript;
+            if (speechToText.trim() !== "") { userInput.value = speechToText; handleMessage(); }
+        };
+        recognition.onerror = () => { voiceOverlay.style.display = 'none'; };
+    }
+
+    sendBtn.onclick = handleMessage;
+    userInput.onkeypress = (e) => { if (e.key === 'Enter') handleMessage(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haqiqiy Tochni GPS Kompas</title>
+    <style>
+        :root {
+            --emerald: #00ffaa;
+            --crimson: #ff2244;
+            --bg-dark: #04060d;
+            --panel: #0b1120;
+            --theme-color: var(--emerald);
+        }
+        body {
+            margin: 0;
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        body.error-active {
+            background-color: #1a0303 !important;
+            --theme-color: var(--crimson) !important;
+        }
+        .container {
+            text-align: center;
+            background: var(--panel);
+            padding: 25px;
+            border-radius: 20px;
+            width: 330px;
+            border: 2px solid #1e293b;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+        h1 { color: var(--theme-color); font-size: 16px; margin: 0; letter-spacing: 1px; text-transform: uppercase; }
+        #gradus { font-size: 54px; font-weight: bold; margin: 8px 0; }
+        
+        .gps-telemetry {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            text-align: left;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--theme-color);
+        }
+        .line { display: flex; justify-content: space-between; margin: 5px 0; }
+        .val { font-weight: bold; color: #fff; }
+
+        .compass-wrapper { position: relative; width: 200px; height: 200px; margin: 0 auto; }
+        .heading-pointer {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 20px; background-color: var(--crimson); z-index: 20;
+            box-shadow: 0 0 8px var(--crimson);
+        }
+        .compass-disk {
+            width: 100%; height: 100%; border: 5px solid #1e293b; border-radius: 50%;
+            position: relative; background: radial-gradient(circle, #121b2e 30%, #0b1120 100%);
+            transition: transform 0.3s cubic-bezier(0.1, 0.8, 0.3, 1);
+        }
+        .dir { position: absolute; font-weight: 900; font-size: 20px; }
+        .n { top: 8px; left: 50%; transform: translateX(-50%); color: var(--crimson); }
+        .s { bottom: 8px; left: 50%; transform: translateX(-50%); color: var(--emerald); }
+        .e { right: 12px; top: 50%; transform: translateY(-50%); color: #475569; }
+        .w { left: 12px; top: 50%; transform: translateY(-50%); color: #475569; }
+        
+        .btn {
+            background: var(--emerald); color: #000; border: none; padding: 15px;
+            width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer;
+            font-size: 13px; letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="title">GPS TOCHNI RADAR</h1>
+        <div id="gradus">---°</div>
+        
+        <div class="gps-telemetry">
+            <div class="line"><span>Aniq Kenglik:</span> <span class="val" id="lat">0.000000</span></div>
+            <div class="line"><span>Aniq Uzunlik:</span> <span class="val" id="lon">0.000000</span></div>
+            <div class="line"><span>GPS Xatoligi (HDOP):</span> <span class="val" id="hdop">Kutilmoqda...</span></div>
+            <div class="line"><span>Haqiqiy Tezlik:</span> <span class="val" id="speed">0.0 km/h</span></div>
+        </div>
+
+        <div class="compass-wrapper">
+            <div class="heading-pointer"></div>
+            <div class="compass-disk" id="disk">
+                <div class="dir n">N</div>
+                <div class="dir e">E</div>
+                <div class="dir s">S</div>
+                <div class="dir w">W</div>
+            </div>
+        </div>
+
+        <button class="btn" id="startBtn" style="margin-top:20px;">SPUTNIKNI FILTRLASH</button>
+    </div>
+
+    <script>
+        const disk = document.getElementById('disk');
+        const gradusTxt = document.getElementById('gradus');
+        const startBtn = document.getElementById('startBtn');
+        const titleTxt = document.getElementById('title');
+        
+        const latTxt = document.getElementById('lat');
+        const lonTxt = document.getElementById('lon');
+        const hdopTxt = document.getElementById('hdop');
+        const speedTxt = document.getElementById('speed');
+
+        // Oldingi koordinatalarni saqlash (Matematik yo'nalishni tochni hisoblash uchun)
+        let lastLat = null;
+        let lastLon = null;
+
+        function startFilteredGPS() {
+            startBtn.style.display = 'none';
+            hdopTxt.innerText = "Sputnik aniqlanmoqda...";
+
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    (position) => {
+                        let coords = position.coords;
+                        let currentLat = coords.latitude;
+                        let currentLon = coords.longitude;
+                        let accuracy = coords.accuracy; // Metrdagi GPS aniqligi
+
+                        // Ekrandagi koordinata telemetriyasini yangilash
+                        latTxt.innerText = currentLat.toFixed(6);
+                        lonTxt.innerText = currentLon.toFixed(6);
+                        hdopTxt.innerText = "± " + accuracy.toFixed(1) + " metr";
+
+                        let speed = coords.speed ? (coords.speed * 3.6).toFixed(1) : 0.0;
+                        speedTxt.innerText = speed + " km/h";
+
+                        // FILTR-1: Agar sputnik xatoligi juda katta bo'lsa (15 metrdan ko'p bo'lsa),
+                        // tizim noto'g'ri ko'rsatmasligi uchun srazu qulflanadi.
+                        if (accuracy > 15) {
+                            triggerGpsError("ERROR 404: Signal Tochni emas (Ko'chaga chiqing)");
+                            return;
+                        }
+
+                        // Sputnikdan kelayotgan tayyor yo'nalish
+                        let heading = coords.heading;
+
+                        // FILTR-2: Agar telefon datchigi yo'nalishni bermasa, 
+                        // biz matematika (Haversine va atan2) yordamida ikki nuqta orasidagi burchakni hisoblaymiz.
+                        if ((heading === null || heading === undefined || isNaN(heading)) && lastLat !== null && lastLon !== null) {
+                            heading = calculateAngleBetweenPoints(lastLat, lastLon, currentLat, currentLon);
+                        }
+
+                        // Agar harakat bo'lsa va burchak tochni aniqlansa:
+                        if (heading !== null && heading !== undefined && !isNaN(heading) && speed > 1) {
+                            document.body.classList.remove('error-active');
+                            let finalHeading = Math.round(heading);
+                            
+                            // UI Yangilash
+                            gradusTxt.innerText = finalHeading + '°';
+                            disk.style.transform = `rotate(${-finalHeading}deg)`;
+                            updateTextDirection(finalHeading);
+
+                            // Koordinatalarni yangilash
+                            lastLat = currentLat;
+                            lastLon = currentLon;
+                        } else {
+                            // Agar siz to'xtab turgan bo'lsangiz, kompas oqib ketmasligi uchun joyida qulflanadi
+                            if (!document.body.classList.contains('error-active')) {
+                                triggerGpsError("To'g'ri ko'rsatish uchun kamida 4-5 metr yuring!");
+                            }
+                        }
+                    },
+                    (error) => { triggerGpsError("ERROR 404: GPS apparati o'chiq!"); },
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+                );
+            } else {
+                triggerGpsError("ERROR 404: Qurilmada GPS yo'q");
+            }
+        }
+
+        // Ikki GPS nuqtasi orasidagi burchakni hisoblaydigan tochni trigonometrik formula
+        function calculateAngleBetweenPoints(lat1, lon1, lat2, lon2) {
+            let dLon = (lon2 - lon1) * Math.PI / 180;
+            let rLat1 = lat1 * Math.PI / 180;
+            let rLat2 = lat2 * Math.PI / 180;
+
+            let y = Math.sin(dLon) * Math.cos(rLat2);
+            let x = Math.cos(rLat1) * Math.sin(rLat2) - Math.sin(rLat1) * Math.cos(rLat2) * Math.cos(dLon);
+            
+            let brng = Math.atan2(y, x) * 180 / Math.PI;
+            return (brng + 360) % 360;
+        }
+
+        function updateTextDirection(heading) {
+            if ((heading >= 0 && heading < 23) || (heading >= 338 && heading <= 360)) titleTxt.innerText = "SEVER (SHIMOL)";
+            else if (heading >= 135 && heading < 225) titleTxt.innerText = "YUG (JANUB)";
+            else if (heading >= 45 && heading < 135) titleTxt.innerText = "VASTOK (SHARQ)";
+            else titleTxt.innerText = "ZAPAD (G'ARB)";
+        }
+
+        function triggerGpsError(msg) {
+            document.body.classList.add('error-active');
+            titleTxt.innerText = "ERROR 404";
+            gradusTxt.innerText = "ERR";
+            hdopTxt.innerText = msg;
+            disk.style.transform = `rotate(45deg)`;
+        }
+
+        startBtn.addEventListener('click', startFilteredGPS);
+    </script>
+</body>
+</html>
